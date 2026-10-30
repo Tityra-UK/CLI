@@ -1,0 +1,2 @@
+# Keep checkouts identical across Linux, macOS and Windows, including Prettier input.
+* text=auto eol=lf

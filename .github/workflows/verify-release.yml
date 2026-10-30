@@ -1,0 +1,74 @@
+name: Verify published release
+
+# Read-only recovery verification. This workflow cannot publish a package.
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published release tag to verify
+        required: true
+        type: string
+        default: v1.0.0
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: github.repository == 'Tityra-UK/CLI' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate the published release and resolve its immutable commit
+        id: release
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFileSync } from 'node:fs';
+          import { execFileSync } from 'node:child_process';
+          const tag = process.env.RELEASE_TAG;
+          if (!/^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.test(tag || '') || /[\r\n]/.test(tag))
+            throw new Error('Provide an exact v<package-version> release tag.');
+          const release = JSON.parse(execFileSync('gh', ['release', 'view', tag, '--repo', process.env.GITHUB_REPOSITORY, '--json', 'tagName,isDraft,publishedAt'], { encoding: 'utf8' }));
+          if (release.tagName !== tag || release.isDraft || !release.publishedAt)
+            throw new Error('Verification requires an existing published release.');
+          const revision = execFileSync('git', ['rev-parse', '--verify', `refs/tags/${tag}^{commit}`], { encoding: 'utf8' }).trim();
+          if (!/^[0-9a-f]{40}$/.test(revision)) throw new Error('Unexpected release commit.');
+          execFileSync('git', ['merge-base', '--is-ancestor', revision, 'refs/remotes/origin/main']);
+          appendFileSync(process.env.GITHUB_OUTPUT, `revision=${revision}\nversion=${tag.slice(1)}\n`);
+          console.log(`Verifying ${tag} at ${revision}; no publication will be attempted.`);
+          NODE
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Install the release npm client
+        run: npm install --global npm@11.21.1
+      - name: Build the release source and verify the published archive
+        env:
+          RELEASE_REVISION: ${{ steps.release.outputs.revision }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          RELEASE_SOURCE="$RUNNER_TEMP/tityra-release-source"
+          RELEASE_ARTIFACTS="$RUNNER_TEMP/tityra-npm-verification"
+          git worktree add --detach "$RELEASE_SOURCE" "$RELEASE_REVISION"
+          cd "$RELEASE_SOURCE"
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+          if (pkg.name !== '@tityra/cli' || pkg.version !== process.env.RELEASE_VERSION)
+            throw new Error('The release tag and package version do not match.');
+          NODE
+          npm ci --ignore-scripts
+          npm run build
+          chmod 755 dist/cli.js
+          mkdir -p "$RELEASE_ARTIFACTS"
+          npm pack --ignore-scripts --json --pack-destination "$RELEASE_ARTIFACTS" > "$RUNNER_TEMP/tityra-verify-pack.json"
+          node "$GITHUB_WORKSPACE/scripts/prepare-npm-publish.mjs" "$RUNNER_TEMP/tityra-verify-pack.json" "$RELEASE_ARTIFACTS" "$RELEASE_SOURCE/package.json" --verify-only

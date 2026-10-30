@@ -1,0 +1,83 @@
+{
+  "name": "@tityra/cli",
+  "version": "1.0.0",
+  "description": "Official Tityra CLI for projects, audits, reports and findings. Built for developers, AI agents and automated workflows.",
+  "type": "module",
+  "bin": {
+    "tityra": "dist/cli.js"
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "CHANGELOG.md",
+    "SECURITY.md"
+  ],
+  "engines": {
+    "node": ">=22.14.0"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Tityra",
+    "email": "info@tityra.com",
+    "url": "https://tityra.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tityra-UK/CLI.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Tityra-UK/CLI/issues"
+  },
+  "homepage": "https://tityra.com/cli",
+  "keywords": [
+    "tityra",
+    "cli",
+    "audits",
+    "findings",
+    "ai-agents",
+    "oauth"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/",
+    "tag": "latest"
+  },
+  "scripts": {
+    "build": "tsc",
+    "check": "tsc --noEmit",
+    "lint": "npm run lint:code && npm run lint:docs",
+    "lint:code": "eslint src scripts tests eslint.config.mjs",
+    "lint:docs": "markdownlint-cli2 *.md LICENSE NOTICE .github/**/*.md",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "prepack": "npm run build",
+    "start": "node dist/cli.js"
+  },
+  "dependencies": {
+    "commander": "15.0.0",
+    "chalk": "6.0.1",
+    "ora": "9.4.1",
+    "prompts": "2.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "5.9.3",
+    "eslint": "9.39.5",
+    "typescript-eslint": "8.72.1",
+    "markdownlint-cli2": "0.24.0",
+    "prettier": "3.9.10",
+    "eslint-config-prettier": "10.1.8",
+    "@types/prompts": "2.4.9"
+  },
+  "overrides": {
+    "markdownlint": {
+      "re2js": "2.9.1"
+    },
+    "micromark-extension-math": {
+      "katex": "0.18.2"
+    }
+  }
+}

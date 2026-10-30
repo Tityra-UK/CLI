@@ -1,0 +1,103 @@
+name: Node.js Package
+
+# Adapted from the release-triggered build/publish pattern in doguabaris/meminisse.
+# Ordinary branch or tag pushes do not publish a package.
+on:
+  release:
+    # published also covers prereleases published from an existing draft.
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-publish
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'Tityra-UK/CLI'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      dist_tag: ${{ steps.release.outputs.dist_tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Validate release version, Git tag and ancestry
+        id: release
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_DRAFT: ${{ github.event.release.draft }}
+          RELEASE_PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync, appendFileSync } from 'node:fs';
+          import { spawnSync } from 'node:child_process';
+          const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+          const version = pkg.version;
+          const match = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.exec(version || '');
+          if (!match || pkg.name !== '@tityra/cli')
+            throw new Error('Release requires a valid @tityra/cli package version.');
+          if (process.env.GITHUB_EVENT_NAME !== 'release' || process.env.RELEASE_DRAFT === 'true')
+            throw new Error('Publishing requires a non-draft GitHub Release.');
+          if (process.env.GITHUB_REF_TYPE !== 'tag' || process.env.GITHUB_REF_NAME !== `v${version}` || process.env.RELEASE_TAG !== `v${version}`)
+            throw new Error('The release tag must exactly match v<package-version>.');
+          const ancestry = spawnSync('git', ['merge-base', '--is-ancestor', 'HEAD', 'refs/remotes/origin/main'], { stdio: 'inherit' });
+          if (ancestry.status !== 0) throw new Error('The release commit must be reachable from origin/main.');
+          const tag = match[1] === '0' || match[4] || process.env.RELEASE_PRERELEASE === 'true' ? 'next' : 'latest';
+          appendFileSync(process.env.GITHUB_OUTPUT, `dist_tag=${tag}\n`);
+          console.log(`Validated ${pkg.name}@${version} for npm tag ${tag}.`);
+          NODE
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm run check
+      - run: npm test
+      - run: npm pack --dry-run
+
+  publish-npm:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Configure reviewers and allowed refs in GitHub; YAML alone does not protect an environment.
+    environment: npm-protected
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - name: Install the trusted-publishing npm client
+        run: npm install --global npm@11.21.1
+      - run: npm ci
+      - run: npm test
+      - name: Pack once and check the exact registry version
+        id: artifact
+        run: |
+          mkdir -p "$RUNNER_TEMP/tityra-npm-release"
+          chmod 755 dist/cli.js
+          npm pack --ignore-scripts --json --pack-destination "$RUNNER_TEMP/tityra-npm-release" > "$RUNNER_TEMP/tityra-npm-pack.json"
+          node scripts/prepare-npm-publish.mjs "$RUNNER_TEMP/tityra-npm-pack.json" "$RUNNER_TEMP/tityra-npm-release"
+      - name: Publish using OIDC
+        if: steps.artifact.outputs.publish == 'true'
+        env:
+          RELEASE_DIST_TAG: ${{ needs.build.outputs.dist_tag }}
+          NPM_TARBALL: ${{ steps.artifact.outputs.tarball }}
+          # npm cannot generate provenance from a private GitHub repository.
+          PUBLISH_PROVENANCE: ${{ github.event.repository.private && 'false' || 'true' }}
+        run: npm publish "$NPM_TARBALL" --access public --tag "$RELEASE_DIST_TAG" --provenance="$PUBLISH_PROVENANCE" --registry https://registry.npmjs.org
