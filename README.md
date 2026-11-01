@@ -6,7 +6,7 @@ The CLI is an API client for the Tityra service. It uses the same account permis
 
 ## Project status
 
-Version `1.0.0` is the stable release. Stable releases use npm's `latest` tag. CI targets Node.js 22 and 24 on Linux, macOS and Windows; local regression tests use isolated fixtures rather than live customer accounts.
+Version `1.1.0` adds project monitoring commands and included-audit pricing status. Stable releases use npm's `latest` tag; check the [npm package page](https://www.npmjs.com/package/@tityra/cli) for the currently published version. CI targets Node.js 22 and 24 on Linux, macOS and Windows; local regression tests use isolated fixtures rather than live customer accounts.
 
 ## Basic functionality
 
@@ -85,7 +85,7 @@ Use `audits list` and `reports get` to read released weekly AX Audit reports wit
 
 Audit lists show the server's pricing status when your connection has `billing:read`; genuine included monitoring requests use `included`. A missing pricing status does not mean a payment is due. Use `audits payment AUDIT_ID` for current payment requirements. Normal report publication and payment checks remain in force.
 
-Monitoring commands are in the unreleased source and are not included in npm version `1.0.0`. Read settings with `projects:read`. To change them, request `monitoring:write` through fresh consent; default scopes and existing connections stay unchanged. The `--scope` list replaces the defaults, so include any other access you still need.
+Monitoring commands require version `1.1.0` or later; version `1.0.0` does not include them. Read settings with `projects:read`. To change them, request `monitoring:write` through fresh consent; default scopes and existing connections stay unchanged. The `--scope` list replaces the defaults, so include any other access you still need.
 
 The interactive project menu also offers **Weekly monitoring** to read the same settings. It does not change monitoring or request additional permissions.
 

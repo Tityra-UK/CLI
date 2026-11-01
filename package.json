@@ -1,6 +1,6 @@
 {
   "name": "@tityra/cli",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Official Tityra CLI for projects, audits, reports and findings. Built for developers, AI agents and automated workflows.",
   "type": "module",
   "bin": {
