@@ -73,6 +73,14 @@ tityra audits payment AUDIT_ID
 
 Audit options describe the existing eligibility and review rules. A submitted request does not start an instant scan or promise a delivery date. Payment status provides the canonical report reference when available.
 
+### Workspace plans and weekly monitoring
+
+Scale and Enterprise support unlimited organisations, projects and members. Enterprise is the annual monitoring plan: £36,000 per year, excluding VAT, with one scheduled AX Audit per week for each enabled project and up to 500 pages per project. Check [current plans and prices](https://app.tityra.com/customer) in your account before subscribing.
+
+Enable **Monitor this project** in the Tityra application for each project, confirm its website and page scope, and use the organisation’s explicitly assigned billing account. Tityra reviews website authority and scope before the first scan. Reports are delivered automatically after the required checks. You can pause and resume each project separately; existing reports remain available.
+
+Use `audits list` and `reports get` to read released weekly AX Audit reports within the projects and permissions you approved. `audits create` submits an additional audit request, which is charged separately; it does not replace the included weekly AX Audit slot. Expert Review is never included in weekly monitoring and always follows the normal separately paid request and checkout process. The CLI does not enable monitoring, choose a payer or change a subscription.
+
 ### 3. Read reports, findings and discussions
 
 ```sh

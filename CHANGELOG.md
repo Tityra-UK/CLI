@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Clarify Scale and Enterprise workspace plans, annual Enterprise pricing and
+  per-project weekly AX Audit monitoring in the package documentation.
+- Specify that Expert Review always follows the separately paid request and checkout flow.
+- Explain that `audits create` submits an additional, separately priced request;
+  monitoring consent, billing assignment and subscription changes stay in Tityra.
+
 ## 1.0.0
 
 - Stable `@tityra/cli` release, version `1.0.0`, distributed through npm's `latest` tag.
