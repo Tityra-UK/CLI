@@ -77,9 +77,9 @@ Audit options describe the existing eligibility and review rules. A submitted re
 
 Scale and Enterprise support unlimited organisations, projects and members. Enterprise offers monthly billing at £3,600 or annual billing at £36,000, excluding VAT, with one scheduled AX Audit per week for each enabled project and up to 500 pages per project. Check [current plans and prices](https://app.tityra.com/customer) in your account before subscribing.
 
-Enable **Monitor this project** in the Tityra application, or use the monitoring commands below with an explicitly granted `monitoring:write` permission and current project management access. Confirm the website and page scope; monitoring uses the organisation’s explicitly assigned billing account. Tityra reviews website authority and scope before the first scan. Reports are delivered automatically after the required checks. You can pause and resume each project separately; existing reports remain available.
+Enable **Monitor this project** in the Tityra application, or use the monitoring commands below with an explicitly granted `monitoring:write` permission and current project management access. Confirm that you are authorised to scan the website and selected pages; monitoring uses the organisation’s explicitly assigned billing account. Your confirmed project consent enables monitoring without a separate administrator approval. Reports are delivered automatically after the required checks. You can pause and resume each project separately; existing reports remain available.
 
-Use `audits list` and `reports get` to read released weekly AX Audit reports within the projects and permissions you approved. `audits create` submits an additional audit request, which is charged separately; it does not replace the included weekly AX Audit slot. Expert Review is never included in weekly monitoring and always follows the normal separately paid request and checkout process. The CLI cannot approve website authority, choose a payer or change a subscription.
+Use `audits list` and `reports get` to read released weekly AX Audit reports within the projects and permissions you approved. `audits create` submits an additional audit request, which is charged separately; it does not replace the included weekly AX Audit slot. Expert Review is never included in weekly monitoring and always follows the normal separately paid request and checkout process. The CLI cannot choose a payer or change a subscription.
 
 Monitoring commands are in the unreleased source and are not included in npm version `1.0.0`. Read settings with `projects:read`. To change them, request `monitoring:write` through fresh consent; default scopes and existing connections stay unchanged. The `--scope` list replaces the defaults, so include any other access you still need.
 
@@ -102,7 +102,7 @@ For `monitoring.json`, copy the current `revision` and `website` into `expectedR
 }
 ```
 
-`enable` also resumes monitoring or changes its scope. To pause, send only `action: "disable"`, the current `expectedRevision` and a new action's `idempotencyKey`. Revision zero is valid for a project without settings. On an uncertain write, retry only the same input and key. The server checks the selected project, current manager, explicit payer, subscription and website; a changed scope needs a fresh authority review.
+`enable` also resumes monitoring or changes its scope. To pause, send only `action: "disable"`, the current `expectedRevision` and a new action's `idempotencyKey`. Revision zero is valid for a project without settings. On an uncertain write, retry only the same input and key. The server checks the selected project, current manager, explicit payer, subscription and website. Confirm your authorisation again when changing the website or scope.
 
 ### 3. Read reports, findings and discussions
 

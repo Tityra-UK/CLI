@@ -72,7 +72,7 @@ export function validateWrite(kind: WriteKind, input: unknown): Record<string, u
   };
   if (kind === 'monitoring') {
     if (!['enable', 'disable'].includes(String(body.action)))
-      usage('Monitoring action must be enable or disable. Authority approval stays in Tityra.');
+      usage('Monitoring action must be enable or disable.');
     if (!Number.isSafeInteger(body.expectedRevision) || Number(body.expectedRevision) < 0)
       usage(
         'expectedRevision must be a non-negative integer from the current monitoring response.',

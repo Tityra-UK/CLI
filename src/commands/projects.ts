@@ -33,7 +33,7 @@ export function registerProjectsCommands(program: Command, context: ContextFacto
       .description('Enable, pause, resume or update the scope of weekly AX Audit monitoring')
       .addHelpText(
         'after',
-        '\nRequires an explicitly granted monitoring:write permission and current project management access.\nRead settings first; include the current expectedRevision and keep the same input and idempotencyKey when retrying an uncertain write.\nUse action enable with authorisation: true and the returned website as expectedWebsite. Use action disable to pause.\nNew or changed scope requires Tityra authority review before scanning. The CLI cannot approve authority, select a payer or change a subscription.\n',
+        '\nRequires an explicitly granted monitoring:write permission and current project management access.\nRead settings first; include the current expectedRevision and keep the same input and idempotencyKey when retrying an uncertain write.\nUse action enable with authorisation: true and the returned website as expectedWebsite. Use action disable to pause.\nEnabling monitoring records your website and scope authorisation without a separate administrator approval. Confirm that authorisation again after changing the website or scope. The CLI cannot select a payer or change a subscription.\n',
       ),
   ).action(async (id: string, _options: unknown, command: Command) => {
     await write(
