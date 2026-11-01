@@ -233,10 +233,47 @@ test('recent audits use the report ID returned by status for report and finding 
     '/api/agent/audits?projectId=project-1&page=1&pageSize=25',
   ]);
   const firstAuditMenu = f.calls.prompts.find((prompt) => prompt.message.startsWith('Audit '));
+  assert.equal(firstAuditMenu.message, 'Audit audit-1: review');
   assert.equal(
     firstAuditMenu.options.some((option) => option.value === 'report'),
     false,
   );
+});
+
+test('recent audit choices preserve included pricing only when returned by the server', async () => {
+  const f = fixture({
+    choices: ['project:0', 'audits', 'back', 'exit'],
+    respond(path) {
+      if (path === '/api/agent/projects') return { projects: [project] };
+      return {
+        requests: [
+          {
+            id: 'audit-weekly',
+            packageName: 'Customer · title',
+            plan: 'automated',
+            status: 'queued',
+            pricingStatus: 'included',
+          },
+          {
+            id: 'audit-extra',
+            plan: 'automated',
+            status: 'queued',
+            pricingStatus: 'quote_required',
+          },
+          { id: 'audit-redacted', plan: 'automated', status: 'queued' },
+        ],
+      };
+    },
+  });
+  await f.run();
+  const menu = f.calls.prompts.find((prompt) => prompt.message.startsWith('Recent audits'));
+  assert.equal(menu.message, 'Recent audits: page 1');
+  assert.equal(menu.options[0].title, 'Customer · title: queued');
+  assert.equal(menu.options[1].title, 'audit-extra: queued');
+  assert.equal(menu.options[0].description, 'Pricing: included');
+  assert.equal(menu.options[1].description, 'Pricing: quote_required');
+  assert.equal(menu.options[2].description, '');
+  assert.equal(f.calls.logins, 0);
 });
 
 test('project switching, options and local connection status keep the workspace open', async () => {
@@ -255,6 +292,34 @@ test('project switching, options and local connection status keep the workspace 
     '/api/agent/audits/options?projectId=project-2',
   ]);
   assert.equal(f.calls.output.at(-1).source, 'stored');
+});
+
+test('weekly monitoring reads only the selected project and preserves the server schedule without new consent', async () => {
+  const monitoring = {
+    projectId: 'project-2',
+    revision: 3,
+    enabled: true,
+    status: 'active',
+    canManage: false,
+    nextScheduledAt: '2026-11-04T10:15:00.000Z',
+    history: [{ cycleId: 'cycle-1', requestId: 'audit-1', status: 'queued' }],
+  };
+  const f = fixture({
+    choices: ['project:1', 'monitoring', 'exit'],
+    respond(path) {
+      if (path === '/api/agent/projects')
+        return { projects: [project, { ...project, id: 'project-2' }] };
+      assert.equal(path, '/api/agent/projects/project-2/monitoring');
+      return monitoring;
+    },
+  });
+  await f.run();
+  assert.deepEqual(f.calls.paths, [
+    '/api/agent/projects',
+    '/api/agent/projects/project-2/monitoring',
+  ]);
+  assert.deepEqual(f.calls.output, [monitoring]);
+  assert.equal(f.calls.logins, 0);
 });
 
 test('server menu text is sanitized and invalid project references never become API paths', async () => {

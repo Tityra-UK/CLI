@@ -18,7 +18,7 @@ Version `1.0.0` is the stable release. Stable releases use npm's `latest` tag. C
 
 ## What it does not do
 
-The CLI does not execute audits locally, approve website authority or replace Tityra's staff review. It does not verify a fix, change technical report evidence, expose private staff notes or grant access to another customer's data. Checkout creates a link; it does not make a payment or authorise automatic charges.
+The CLI does not execute audits locally or independently verify website ownership. Your explicit `authorisation: true` declaration and the validated website scope provide the required request authorisation; no second manual staff confirmation of website authority is required. Individually requested reports retain Tityra's staff quality review. The CLI does not verify a fix, change technical report evidence, expose private staff notes or grant access to another customer's data. Checkout creates a link; it does not make a payment or authorise automatic charges.
 
 The interactive workspace offers read-only navigation. Account changes use the explicit commands described below and require reviewed JSON input plus `--yes`.
 
@@ -77,11 +77,17 @@ Audit options describe the existing eligibility and review rules. A submitted re
 
 Scale and Enterprise support unlimited organisations, projects and members. Enterprise offers monthly billing at £3,600 or annual billing at £36,000, excluding VAT, with one scheduled AX Audit per week for each enabled project and up to 500 pages per project. Check [current plans and prices](https://app.tityra.com/customer) in your account before subscribing.
 
-Enable **Monitor this project** in the Tityra application, or use the monitoring commands below with an explicitly granted `monitoring:write` permission and current project management access. Confirm that you are authorised to scan the website and selected pages; monitoring uses the organisation’s explicitly assigned billing account. Your confirmed project consent enables monitoring without a separate administrator approval. Reports are delivered automatically after the required checks. You can pause and resume each project separately; existing reports remain available.
+Enable **Monitor this project** in the Tityra application, or use the monitoring commands below with an explicitly granted `monitoring:write` permission and current project management access. Confirm that you are authorised to scan the website and selected pages. Eligibility comes from the project's organisation and its explicitly assigned Billing Profile, with an active subscription or explicit complimentary assignment that includes weekly monitoring. Your personal plan or membership in another paying organisation does not supply it. Your confirmed project consent enables monitoring without a separate administrator approval. Reports are delivered automatically after the required checks. You can pause and resume each project separately; existing reports remain available.
 
-Use `audits list` and `reports get` to read released weekly AX Audit reports within the projects and permissions you approved. `audits create` submits an additional audit request, which is charged separately; it does not replace the included weekly AX Audit slot. Expert Review is never included in weekly monitoring and always follows the normal separately paid request and checkout process. The CLI cannot choose a payer or change a subscription.
+The first included AX Audit is due seven days after the project's first production audit request for its current website, whether that request was Free Audit, AX Audit or Expert Review. If no request exists, confirmed monitoring consent starts that interval. Enabling or resuming an eligible project whose audit is already due automatically queues one included AX Audit. Later included audits remain at least seven days apart; missed slots do not accumulate. Read the server's `nextScheduledAt` and `history` rather than calculating a new start date locally.
+
+Use `audits list` and `reports get` to read released weekly AX Audit reports within the projects and permissions you approved. An AX Audit submitted through `audits create` is an additional request, charged separately; it does not replace the included weekly AX Audit slot. Expert Review is never included in weekly monitoring and always follows the normal separately paid request and checkout process. Free Audit requests retain their normal eligibility limits. The CLI cannot choose a payer or change a subscription.
+
+Audit lists show the server's pricing status when your connection has `billing:read`; genuine included monitoring requests use `included`. A missing pricing status does not mean a payment is due. Use `audits payment AUDIT_ID` for current payment requirements. Normal report publication and payment checks remain in force.
 
 Monitoring commands are in the unreleased source and are not included in npm version `1.0.0`. Read settings with `projects:read`. To change them, request `monitoring:write` through fresh consent; default scopes and existing connections stay unchanged. The `--scope` list replaces the defaults, so include any other access you still need.
+
+The interactive project menu also offers **Weekly monitoring** to read the same settings. It does not change monitoring or request additional permissions.
 
 ```sh
 tityra auth login --scope "projects:read monitoring:write"
@@ -157,7 +163,7 @@ Other write commands use the same confirmation pattern:
 
 Read current revision fields using `--json` before changing a record. Discussion and challenge messages contain 3–4,000 characters. Remediation statuses are `open`, `planned`, `in_progress`, `resolved`, `wont_fix` and `not_applicable`; `resolved` remains customer-reported rather than independently verified.
 
-Audit scope is either `{"mode":"website"}` or `{"mode":"specific_urls","urls":["https://example.com/path"]}`. The project supplies the website, and existing authority, scope and commercial checks still apply. Checkout creates a link for the customer to complete.
+Audit scope is either `{"mode":"website"}` or `{"mode":"specific_urls","urls":["https://example.com/path"]}`. The project supplies the website. Normal audit requests record your explicit authorisation for that scope without a separate manual staff authority confirmation. Eligibility, scope and commercial checks still apply, and individually requested reports retain staff quality review. Monitoring reuses the confirmed project consent described above. Checkout creates a link for the customer to complete.
 
 ### 5. Use the CLI in scripts or with an agent
 

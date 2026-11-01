@@ -20,7 +20,7 @@ export function welcomeBanner(version: string, color = true): string {
   const paint = new Chalk({
     level: color && !('NO_COLOR' in process.env) && supportsColor ? supportsColor.level : 0,
   });
-  if (process.env.TERM === 'dumb') return `\nTityra · v${version}\n`;
+  if (process.env.TERM === 'dumb') return `\nTityra v${version}\n`;
   const captions: Record<number, string> = {
     2: paint.hex('#ed4832').bold('Tityra'),
     4: (process.stdout.columns || 80) >= 70 ? 'Your workspace, from the terminal.' : '',

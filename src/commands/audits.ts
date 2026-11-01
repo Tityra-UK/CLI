@@ -64,10 +64,10 @@ export function registerAuditsCommands(program: Command, context: ContextFactory
   writeOptions(
     audits
       .command('create')
-      .description('Request an additional audit under the existing eligibility and authority rules')
+      .description('Request an additional audit with explicit authorisation for its website scope')
       .addHelpText(
         'after',
-        '\nWeekly monitoring includes AX Audit only. Additional AX Audits and Expert Review require a separate request and payment through the normal checkout.\nUse projects monitoring get/update for an explicitly authorised project, or manage monitoring in the Tityra application.\n',
+        '\nYour authorisation: true declaration and the validated website scope provide the required request authorisation. No second manual staff confirmation of website authority is required.\nEligibility, scope and commercial checks still apply. Individually requested reports retain staff quality review.\nWeekly monitoring includes AX Audit only. Additional AX Audits and Expert Review require a separate request and payment through the normal checkout.\nUse projects monitoring get/update for an explicitly authorised project, or manage monitoring in the Tityra application.\n',
       ),
   ).action(async (_options: unknown, command: Command) => {
     await write(command, context, 'audit', '/api/agent/audits');

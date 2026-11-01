@@ -12,6 +12,20 @@ const CLI = fileURLToPath(new URL('../dist/cli.js', import.meta.url));
 const TOKEN = 'fixture-cli-access-token-never-print';
 const KEY = '10000000-0000-4000-8000-000000000001';
 
+test('audit creation help separates explicit request authorisation from report quality and payment checks', () => {
+  const help = execFileSync(process.execPath, [CLI, 'audits', 'create', '--help'], {
+    encoding: 'utf8',
+  });
+  assert.match(help, /authorisation: true declaration and the validated website scope/);
+  assert.match(help, /No second manual staff confirmation of website authority is required/);
+  assert.match(help, /Individually requested reports retain staff quality review/);
+  assert.match(
+    help,
+    /Additional AX Audits and Expert Review require a separate request and payment/,
+  );
+  assert.match(help, /--yes/);
+});
+
 async function fixture(t, handler) {
   const directory = await mkdtemp(join(await realpath(tmpdir()), 'tityra-cli-test-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
@@ -193,6 +207,47 @@ test('human output safely formats object cells and removes directional terminal 
   const fallback = await run(context, ['projects', 'list'], '', {}, false);
   assert.equal(fallback.code, 0, fallback.stderr);
   assert.doesNotMatch(fallback.stdout, /[\u001b\u202e\u2066]/);
+});
+
+test('audit tables show canonical included pricing and do not infer billing metadata when redacted', async (t) => {
+  const request = {
+    id: 'audit-weekly',
+    plan: 'automated',
+    status: 'queued',
+    pricingStatus: 'included',
+  };
+  let body = {
+    requests: [request, { ...request, id: 'audit-extra', pricingStatus: 'quote_required' }],
+    pagination: { page: 1, total: 2, hasMore: true },
+  };
+  const context = await fixture(t, (_request, response) => {
+    response.writeHead(200, { 'Content-Type': 'application/json' });
+    response.end(JSON.stringify(body));
+  });
+  const args = ['audits', 'list', '--project', 'project-fixture'];
+  const table = await run(context, args, '', {}, false);
+  assert.equal(table.code, 0, table.stderr);
+  assert.match(table.stdout, /PRICING/);
+  assert.match(table.stdout, /audit-weekly\s+queued\s+included/);
+  assert.match(table.stdout, /audit-extra\s+queued\s+quote_required/);
+  assert.match(table.stdout, /Page 1: 2 total, more available/);
+  assert.doesNotMatch(table.stdout, /[·—]/);
+  const json = await run(context, args);
+  assert.equal(json.code, 0, json.stderr);
+  assert.deepEqual(JSON.parse(json.stdout), body);
+
+  body = {
+    requests: [{ id: request.id, plan: request.plan, status: request.status }],
+    pagination: { page: 1, total: 1, hasMore: false },
+  };
+  const redacted = await run(context, args, '', {}, false);
+  assert.equal(redacted.code, 0, redacted.stderr);
+  assert.doesNotMatch(redacted.stdout, /PRICING|included|payment_required/);
+  assert.match(redacted.stdout, /Page 1: 1 total/);
+  assert.doesNotMatch(redacted.stdout, /more available|[·—]/);
+  const redactedJson = await run(context, args);
+  assert.equal(redactedJson.code, 0, redactedJson.stderr);
+  assert.deepEqual(JSON.parse(redactedJson.stdout), body);
 });
 
 test('human table sizing handles a large bounded response without an argument-count overflow', async (t) => {

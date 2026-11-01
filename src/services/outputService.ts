@@ -48,9 +48,15 @@ export function createOutput(json = false, color = true) {
         process.stdout.write(paint.dim('No results.\n'));
         return;
       }
-      const keys = ['id', 'threadId', 'title', 'name', 'status', 'severity'].filter((key) =>
-        rows.some((row) => row[key] !== undefined),
-      );
+      const keys = [
+        'id',
+        'threadId',
+        'title',
+        'name',
+        'status',
+        'severity',
+        'pricingStatus',
+      ].filter((key) => rows.some((row) => row[key] !== undefined));
       if (!keys.length) {
         process.stdout.write(humanJson(data) + '\n');
         return;
@@ -73,14 +79,20 @@ export function createOutput(json = false, color = true) {
           .join('  ')
           .trimEnd();
       process.stdout.write(
-        paint.bold(rowText(Object.fromEntries(keys.map((key) => [key, key.toUpperCase()])))) + '\n',
+        paint.bold(
+          rowText(
+            Object.fromEntries(
+              keys.map((key) => [key, key === 'pricingStatus' ? 'PRICING' : key.toUpperCase()]),
+            ),
+          ),
+        ) + '\n',
       );
       for (const row of rows) process.stdout.write(rowText(row) + '\n');
       if (value?.pagination && typeof value.pagination === 'object') {
         const pagination = value.pagination as Record<string, unknown>;
         process.stdout.write(
           paint.dim(
-            `\nPage ${terminalText(pagination.page)} · ${terminalText(pagination.total)} total${pagination.hasMore ? ' · more available' : ''}\n`,
+            `\nPage ${terminalText(pagination.page)}: ${terminalText(pagination.total)} total${pagination.hasMore ? ', more available' : ''}\n`,
           ),
         );
       }

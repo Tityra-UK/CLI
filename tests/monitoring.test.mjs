@@ -51,7 +51,7 @@ test('monitoring reads use the selected project API path and preserve the comple
 test('confirmed monitoring changes PATCH the exact reviewed revision, scope and action key', async (t) => {
   const file = await inputFile(t);
   const calls = [];
-  const view = { revision: 1, status: 'pending_review' };
+  const view = { revision: 1, status: 'active' };
   const cli = command({ request: async (...args) => (calls.push(args), view) });
   await assert.rejects(cli.run(['projects', 'monitoring', 'update', 'project-1', '--input', file]));
   assert.equal(calls.length, 0);
@@ -106,7 +106,7 @@ test('uncertain monitoring writes never retry automatically and an explicit retr
   t.mock.method(globalThis, 'fetch', async (url, options) => {
     requests.push({ url: String(url), ...options });
     if (requests.length === 1) throw new Error('Isolated transport interruption');
-    return Response.json({ revision: 1, status: 'pending_review' });
+    return Response.json({ revision: 1, status: 'active' });
   });
   const cli = command(new ApiClient('https://app.tityra.com', async () => 'fixture-secret'));
   const args = ['projects', 'monitoring', 'update', 'project-1', '--input', file, '--yes'];

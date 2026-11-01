@@ -89,7 +89,7 @@ async function requestMenu(
       );
     choices.push({ title: 'Payment status', value: 'payment' }, back);
     const action = await environment.choose(
-      `Audit ${terminalText(request.id)} · ${terminalText(request.status)}`,
+      `Audit ${terminalText(request.id)}: ${terminalText(request.status)}`,
       choices,
     );
     if (!action || action === 'back') return;
@@ -117,9 +117,16 @@ async function recentAudits(
     const result = await load(context, `/api/agent/audits?${query}`);
     const requests = items(result, 'requests');
     const choices: Choice[] = requests.map((request, index) => ({
-      title: `${terminalText(request.packageName || request.id)} · ${terminalText(request.status)}`,
+      title: `${terminalText(request.packageName || request.id)}: ${terminalText(request.status)}`,
       value: `request:${index}`,
-      description: terminalText(request.receivedAt || request.websiteUrl),
+      description: [
+        terminalText(request.receivedAt || request.websiteUrl),
+        ...(typeof request.pricingStatus === 'string'
+          ? [`Pricing: ${terminalText(request.pricingStatus)}`]
+          : []),
+      ]
+        .filter(Boolean)
+        .join(' | '),
     }));
     if (!requests.length) environment.write('\nNo audit requests on this page.\n');
     if (
@@ -131,7 +138,7 @@ async function recentAudits(
       choices.push({ title: 'Next page', value: 'next' });
     if (page > 1) choices.push({ title: 'Previous page', value: 'previous' });
     choices.push(back);
-    const selected = await environment.choose(`Recent audits · page ${page}`, choices);
+    const selected = await environment.choose(`Recent audits: page ${page}`, choices);
     if (!selected || selected === 'back') return;
     if (selected === 'next') {
       page++;
@@ -186,6 +193,7 @@ async function projectWorkspace(
       const action = await environment.choose('What would you like to do?', [
         { title: 'Recent audits', value: 'audits' },
         { title: 'Audit options', value: 'options' },
+        { title: 'Weekly monitoring', value: 'monitoring' },
         { title: 'Switch project', value: 'switch' },
         { title: 'Connection status', value: 'status' },
         exit,
@@ -197,6 +205,8 @@ async function projectWorkspace(
         context.output(
           await load(context, `/api/agent/audits/options?${new URLSearchParams({ projectId })}`),
         );
+      else if (action === 'monitoring')
+        context.output(await load(context, `/api/agent/projects/${projectId}/monitoring`));
       else if (action === 'audits') await recentAudits(context, projectId, environment);
     }
   }
