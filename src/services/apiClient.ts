@@ -103,9 +103,11 @@ export class ApiClient {
           : response.status === 403
             ? 'Your connection does not have permission for this project or action. Review its scopes and project access.'
             : response.status === 402
-              ? 'Payment is required before this report is available.'
+              ? pathname.endsWith('/monitoring')
+                ? 'This project is not currently eligible for monitoring. Review its subscription in Tityra.'
+                : 'Payment is required before this report is available.'
               : response.status === 409
-                ? 'The report or discussion changed. Read the latest revision and review your input before retrying.'
+                ? 'The resource or its authorisation changed. Read the latest revision and review your input before retrying.'
                 : response.status === 429
                   ? 'Tityra rate limited this request. Wait before retrying; preserve the idempotency key for writes.'
                   : response.status === 404

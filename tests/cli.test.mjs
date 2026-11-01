@@ -334,6 +334,10 @@ test('read commands map positional IDs and project filters to the documented acc
   const context = await fixture(t);
   const cases = [
     {
+      args: ['projects', 'monitoring', 'get', 'project-fixture'],
+      path: '/api/agent/projects/project-fixture/monitoring',
+    },
+    {
       args: ['audits', 'options', '--project', 'project-fixture'],
       path: '/api/agent/audits/options',
       project: 'project-fixture',
@@ -372,7 +376,7 @@ test('read commands map positional IDs and project filters to the documented acc
   assert.equal(context.requests.length, cases.length);
 });
 
-test('finding, discussion and checkout mutations preserve their exact method, revisions and stable body', async (t) => {
+test('monitoring, finding, discussion and checkout mutations preserve their exact method, revisions and stable body', async (t) => {
   const context = await fixture(t, (_request, response) => {
     response.writeHead(200, { 'Content-Type': 'application/json' });
     response.end(JSON.stringify({ saved: true }));
@@ -381,6 +385,25 @@ test('finding, discussion and checkout mutations preserve their exact method, re
   const finding = 'FND:metadata.v2';
   const base = '/api/agent/reports/report-fixture/findings/FND%3Ametadata.v2';
   const cases = [
+    {
+      args: ['projects', 'monitoring', 'update', 'project-fixture'],
+      method: 'PATCH',
+      path: '/api/agent/projects/project-fixture/monitoring',
+      body: {
+        action: 'enable',
+        expectedRevision: 0,
+        expectedWebsite: 'https://example.test/',
+        authorisation: true,
+        auditScope: { mode: 'website' },
+        idempotencyKey: KEY,
+      },
+    },
+    {
+      args: ['projects', 'monitoring', 'update', 'project-fixture'],
+      method: 'PATCH',
+      path: '/api/agent/projects/project-fixture/monitoring',
+      body: { action: 'disable', expectedRevision: 3, idempotencyKey: KEY },
+    },
     {
       args: ['reports', 'checkout', report],
       method: 'POST',

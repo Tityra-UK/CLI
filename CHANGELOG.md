@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- Clarify Scale and Enterprise workspace plans, annual Enterprise pricing and
+- Add selected-project monitoring reads and confirmed enable, pause, resume and scope changes.
+- Require a new explicit `monitoring:write` grant for changes, preserving revision checks and stable retry keys.
+- Clarify Scale and Enterprise workspace plans, monthly and annual Enterprise pricing and
   per-project weekly AX Audit monitoring in the package documentation.
 - Specify that Expert Review always follows the separately paid request and checkout flow.
 - Explain that `audits create` submits an additional, separately priced request;

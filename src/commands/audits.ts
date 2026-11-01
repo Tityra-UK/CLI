@@ -67,7 +67,7 @@ export function registerAuditsCommands(program: Command, context: ContextFactory
       .description('Request an additional audit under the existing eligibility and authority rules')
       .addHelpText(
         'after',
-        '\nWeekly monitoring includes AX Audit only. Additional AX Audits and Expert Review require a separate request and payment through the normal checkout.\nEnable or pause weekly AX Audit monitoring per project in the Tityra application.\n',
+        '\nWeekly monitoring includes AX Audit only. Additional AX Audits and Expert Review require a separate request and payment through the normal checkout.\nUse projects monitoring get/update for an explicitly authorised project, or manage monitoring in the Tityra application.\n',
       ),
   ).action(async (_options: unknown, command: Command) => {
     await write(command, context, 'audit', '/api/agent/audits');

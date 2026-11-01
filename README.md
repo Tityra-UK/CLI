@@ -75,11 +75,34 @@ Audit options describe the existing eligibility and review rules. A submitted re
 
 ### Workspace plans and weekly monitoring
 
-Scale and Enterprise support unlimited organisations, projects and members. Enterprise is the annual monitoring plan: £36,000 per year, excluding VAT, with one scheduled AX Audit per week for each enabled project and up to 500 pages per project. Check [current plans and prices](https://app.tityra.com/customer) in your account before subscribing.
+Scale and Enterprise support unlimited organisations, projects and members. Enterprise offers monthly billing at £3,600 or annual billing at £36,000, excluding VAT, with one scheduled AX Audit per week for each enabled project and up to 500 pages per project. Check [current plans and prices](https://app.tityra.com/customer) in your account before subscribing.
 
-Enable **Monitor this project** in the Tityra application for each project, confirm its website and page scope, and use the organisation’s explicitly assigned billing account. Tityra reviews website authority and scope before the first scan. Reports are delivered automatically after the required checks. You can pause and resume each project separately; existing reports remain available.
+Enable **Monitor this project** in the Tityra application, or use the monitoring commands below with an explicitly granted `monitoring:write` permission and current project management access. Confirm the website and page scope; monitoring uses the organisation’s explicitly assigned billing account. Tityra reviews website authority and scope before the first scan. Reports are delivered automatically after the required checks. You can pause and resume each project separately; existing reports remain available.
 
-Use `audits list` and `reports get` to read released weekly AX Audit reports within the projects and permissions you approved. `audits create` submits an additional audit request, which is charged separately; it does not replace the included weekly AX Audit slot. Expert Review is never included in weekly monitoring and always follows the normal separately paid request and checkout process. The CLI does not enable monitoring, choose a payer or change a subscription.
+Use `audits list` and `reports get` to read released weekly AX Audit reports within the projects and permissions you approved. `audits create` submits an additional audit request, which is charged separately; it does not replace the included weekly AX Audit slot. Expert Review is never included in weekly monitoring and always follows the normal separately paid request and checkout process. The CLI cannot approve website authority, choose a payer or change a subscription.
+
+Monitoring commands are in the unreleased source and are not included in npm version `1.0.0`. Read settings with `projects:read`. To change them, request `monitoring:write` through fresh consent; default scopes and existing connections stay unchanged. The `--scope` list replaces the defaults, so include any other access you still need.
+
+```sh
+tityra auth login --scope "projects:read monitoring:write"
+tityra projects monitoring get PROJECT_ID --json
+tityra projects monitoring update PROJECT_ID --input monitoring.json --yes --json
+```
+
+For `monitoring.json`, copy the current `revision` and `website` into `expectedRevision` and `expectedWebsite`, and generate a UUID once for the intended action:
+
+```json
+{
+  "action": "enable",
+  "expectedRevision": 0,
+  "expectedWebsite": "https://example.com/",
+  "authorisation": true,
+  "auditScope": { "mode": "website" },
+  "idempotencyKey": "10000000-0000-4000-8000-000000000001"
+}
+```
+
+`enable` also resumes monitoring or changes its scope. To pause, send only `action: "disable"`, the current `expectedRevision` and a new action's `idempotencyKey`. Revision zero is valid for a project without settings. On an uncertain write, retry only the same input and key. The server checks the selected project, current manager, explicit payer, subscription and website; a changed scope needs a fresh authority review.
 
 ### 3. Read reports, findings and discussions
 
@@ -122,14 +145,15 @@ tityra discussions create REPORT_ID FINDING_ID --input discussion.json --yes --j
 
 Other write commands use the same confirmation pattern:
 
-| Command                                            | Input fields besides `idempotencyKey`                                                                     |
-| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `audits create`                                    | `projectId`, `plan` (`free`, `automated`, `human`), `authorisation: true`; optional `notes`, `auditScope` |
-| `findings challenge REPORT_ID FINDING_ID`          | `reason` (`irrelevant`, `false_positive`, `unclear_other`), `body`, `expectedReportRevision`              |
-| `discussions create REPORT_ID FINDING_ID`          | `body`, `expectedReportRevision`                                                                          |
-| `discussions reply REPORT_ID FINDING_ID THREAD_ID` | `body`, `expectedReportRevision`, `expectedThreadRevision`                                                |
-| `findings remediate REPORT_ID FINDING_ID`          | `status`, `reason`, `expectedReportRevision`, `expectedTrackingRevision`                                  |
-| `reports checkout REPORT_ID`                       | No additional fields                                                                                      |
+| Command                                            | Input fields besides `idempotencyKey`                                                                                                  |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `audits create`                                    | `projectId`, `plan` (`free`, `automated`, `human`), `authorisation: true`; optional `notes`, `auditScope`                              |
+| `projects monitoring update PROJECT_ID`            | `action` (`enable`, `disable`), `expectedRevision`; enable requires `authorisation: true`, `expectedWebsite`, and accepts `auditScope` |
+| `findings challenge REPORT_ID FINDING_ID`          | `reason` (`irrelevant`, `false_positive`, `unclear_other`), `body`, `expectedReportRevision`                                           |
+| `discussions create REPORT_ID FINDING_ID`          | `body`, `expectedReportRevision`                                                                                                       |
+| `discussions reply REPORT_ID FINDING_ID THREAD_ID` | `body`, `expectedReportRevision`, `expectedThreadRevision`                                                                             |
+| `findings remediate REPORT_ID FINDING_ID`          | `status`, `reason`, `expectedReportRevision`, `expectedTrackingRevision`                                                               |
+| `reports checkout REPORT_ID`                       | No additional fields                                                                                                                   |
 
 Read current revision fields using `--json` before changing a record. Discussion and challenge messages contain 3–4,000 characters. Remediation statuses are `open`, `planned`, `in_progress`, `resolved`, `wont_fix` and `not_applicable`; `resolved` remains customer-reported rather than independently verified.
 
