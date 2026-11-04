@@ -24,7 +24,7 @@ The interactive workspace offers read-only navigation. Account changes use the e
 
 ## Prerequisites and installation
 
-You need **Node.js 22.14 or later**, a Tityra customer account and permission to access the projects you select. Staff and partner operations are not delegated through this connection. Browser login requires the browser to reach the temporary loopback callback on the computer running the CLI.
+You need **Node.js 22.14 or later**, a Tityra customer account and permission to access the projects you select. Staff operations are not delegated through this connection. Browser login requires the browser to reach the temporary loopback callback on the computer running the CLI.
 
 Install the stable release:
 
