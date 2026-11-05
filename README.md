@@ -2,11 +2,11 @@
 
 Your Tityra workspace, from the terminal. Explore projects, read audit reports and work through findings from the command line, scripts or an AI agent.
 
-The CLI is an API client for the Tityra service. It uses the same account permissions, selected projects and customer workflows as the application.
+Tityra's website content audits review content delivery, structure and available context within an agreed website scope. Reports document findings and supporting evidence. The CLI is an API client for the Tityra service and uses the same account permissions, selected projects and customer workflows as the application.
 
 ## Project status
 
-Version `1.1.0` adds project monitoring commands and included-audit pricing status. Stable releases use npm's `latest` tag; check the [npm package page](https://www.npmjs.com/package/@tityra/cli) for the currently published version. CI targets Node.js 22 and 24 on Linux, macOS and Windows; local regression tests use isolated fixtures rather than live customer accounts.
+Version `1.1.1` updates the terminology used for Tityra's website content audit service. Version `1.1.0` added project monitoring commands and included-audit pricing status. Stable releases use npm's `latest` tag; check the [npm package page](https://www.npmjs.com/package/@tityra/cli) for the currently published version. CI targets Node.js 22 and 24 on Linux, macOS and Windows; local regression tests use isolated fixtures rather than live customer accounts.
 
 ## Basic functionality
 
@@ -75,13 +75,13 @@ Audit options describe the existing eligibility and review rules. A submitted re
 
 ### Workspace plans and weekly monitoring
 
-Scale and Enterprise support unlimited organisations, projects and members. Enterprise offers monthly billing at £3,600 or annual billing at £36,000, excluding VAT, with one scheduled AX Audit per week for each enabled project and up to 500 pages per project. Check [current plans and prices](https://app.tityra.com/customer) in your account before subscribing.
+Scale and Enterprise support unlimited organisations, projects and members. Enterprise offers monthly billing at £3,600 or annual billing at £36,000, excluding VAT, with one scheduled In-Depth Audit per week for each enabled project and up to 500 pages per project. Check [current plans and prices](https://app.tityra.com/customer) in your account before subscribing.
 
 Enable **Monitor this project** in the Tityra application, or use the monitoring commands below with an explicitly granted `monitoring:write` permission and current project management access. Confirm that you are authorised to scan the website and selected pages. Eligibility comes from the project's organisation and its explicitly assigned Billing Profile, with an active subscription or explicit complimentary assignment that includes weekly monitoring. Your personal plan or membership in another paying organisation does not supply it. Your confirmed project consent enables monitoring without a separate administrator approval. Reports are delivered automatically after the required checks. You can pause and resume each project separately; existing reports remain available.
 
-The first included AX Audit is due seven days after the project's first production audit request for its current website, whether that request was Free Audit, AX Audit or Expert Review. If no request exists, confirmed monitoring consent starts that interval. Enabling or resuming an eligible project whose audit is already due automatically queues one included AX Audit. Later included audits remain at least seven days apart; missed slots do not accumulate. Read the server's `nextScheduledAt` and `history` rather than calculating a new start date locally.
+The first included website content audit is due seven days after the project's first production audit request for its current website, whether that request was Initial Audit, In-Depth Audit or Expert Review. If no request exists, confirmed monitoring consent starts that interval. Enabling or resuming an eligible project whose audit is already due automatically queues one included audit. Later included audits remain at least seven days apart; missed slots do not accumulate. Read the server's `nextScheduledAt` and `history` rather than calculating a new start date locally.
 
-Use `audits list` and `reports get` to read released weekly AX Audit reports within the projects and permissions you approved. An AX Audit submitted through `audits create` is an additional request, charged separately; it does not replace the included weekly AX Audit slot. Expert Review is never included in weekly monitoring and always follows the normal separately paid request and checkout process. Free Audit requests retain their normal eligibility limits. The CLI cannot choose a payer or change a subscription.
+Use `audits list` and `reports get` to read released weekly website content audit reports within the projects and permissions you approved. A paid In-Depth Audit submitted through `audits create` is an additional request, charged separately; it does not replace the included weekly audit slot. Expert Review is never included in weekly monitoring and always follows the normal separately paid request and checkout process. Initial Audit requests retain their normal eligibility limits. The CLI cannot choose a payer or change a subscription.
 
 Audit lists show the server's pricing status when your connection has `billing:read`; genuine included monitoring requests use `included`. A missing pricing status does not mean a payment is due. Use `audits payment AUDIT_ID` for current payment requirements. Normal report publication and payment checks remain in force.
 

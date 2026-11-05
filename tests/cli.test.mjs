@@ -21,7 +21,7 @@ test('audit creation help separates explicit request authorisation from report q
   assert.match(help, /Individually requested reports retain staff quality review/);
   assert.match(
     help,
-    /Additional AX Audits and Expert Review require a separate request and payment/,
+    /Additional In-Depth Audits and Expert Review require a separate request and payment/,
   );
   assert.match(help, /--yes/);
 });

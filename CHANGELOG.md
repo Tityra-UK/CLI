@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1
+
+- Update customer-facing audit terminology to describe website content audits.
+- Clarify the content delivery, structure and context covered by the service.
+
 ## 1.1.0
 
 - Clarify that audit requests use explicit authorisation and validated scope without a second manual staff authority confirmation, while retaining report quality and commercial checks.
