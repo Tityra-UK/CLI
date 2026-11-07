@@ -13,7 +13,7 @@ Version `1.1.1` updates the terminology used for Tityra's website content audit 
 - Opens an interactive workspace with browser sign-in, project selection and persistent navigation.
 - Lists audit options and requests, reads released reports and findings, and downloads a published PDF revision.
 - Submits audit requests, finding challenges, discussions and customer-reported remediation with explicit confirmation.
-- Reads payment status and creates checkout links for the customer to review and pay.
+- Reads funding status. Organisation credit purchases and spending approval take place in Tityra.
 - Returns complete JSON records and stable exit codes for scripts and agents.
 
 ## What it does not do
@@ -75,15 +75,17 @@ Audit options describe the existing eligibility and review rules. A submitted re
 
 ### Workspace plans and weekly monitoring
 
-Scale and Enterprise support unlimited organisations, projects and members. Enterprise offers monthly billing at £3,600 or annual billing at £36,000, excluding VAT, with one scheduled In-Depth Audit per week for each enabled project and up to 500 pages per project. Check [current plans and prices](https://app.tityra.com/customer) in your account before subscribing.
+All plans support unlimited organisations and projects. Starter includes two members, Pro includes 10 members at £5/month or £50/year, and Enterprise includes unlimited members and monitoring automation at £49/month or £490/year. Subscription prices exclude VAT. Check [current plans and prices](https://app.tityra.com/customer) before subscribing.
 
-Enable **Monitor this project** in the Tityra application, or use the monitoring commands below with an explicitly granted `monitoring:write` permission and current project management access. Confirm that you are authorised to scan the website and selected pages. Eligibility comes from the project's organisation and its explicitly assigned Billing Profile, with an active subscription or explicit complimentary assignment that includes weekly monitoring. Your personal plan or membership in another paying organisation does not supply it. Your confirmed project consent enables monitoring without a separate administrator approval. Reports are delivered automatically after the required checks. You can pause and resume each project separately; existing reports remain available.
+Each organisation has its own prepaid balance. **1 credit = £1 including VAT**. Purchased credits do not expire; automatic top-ups are off. Initial Audit remains free. In-Depth Audit starts at 10 credits (£10 including VAT), covering the first 10 successfully reviewed unique HTML pages. Each additional reviewed page costs 1 credit, up to 500 pages per audit. The approved maximum is reserved before work begins. Unused credits are released; technical retries do not charge the same page twice. Expert Review uses 1,000 credits per day after approval of its scope and maximum cost.
 
-The first included website content audit is due seven days after the project's first production audit request for its current website, whether that request was Initial Audit, In-Depth Audit or Expert Review. If no request exists, confirmed monitoring consent starts that interval. Enabling or resuming an eligible project whose audit is already due automatically queues one included audit. Later included audits remain at least seven days apart; missed slots do not accumulate. Read the server's `nextScheduledAt` and `history` rather than calculating a new start date locally.
+Enterprise weekly monitoring also consumes organisation credits. Enable it in Tityra, where a project manager with organisation spending permission confirms website authority, scope and a recurring credit budget. Existing consent to free monitoring does not authorise paid runs. Each new cycle reserves its budget; insufficient credit pauses new runs without creating debt. Membership in another organisation does not share its subscription or balance. Reports are delivered after checks and settlement, and existing reports remain available when monitoring is paused.
 
-Use `audits list` and `reports get` to read released weekly website content audit reports within the projects and permissions you approved. A paid In-Depth Audit submitted through `audits create` is an additional request, charged separately; it does not replace the included weekly audit slot. Expert Review is never included in weekly monitoring and always follows the normal separately paid request and checkout process. Initial Audit requests retain their normal eligibility limits. The CLI cannot choose a payer or change a subscription.
+The first weekly audit is due seven days after the project's earliest non-cancelled audit request for its current website, or after monitoring consent if no request exists. An overdue eligible project queues one due run when its approved budget can be reserved. Missed weeks do not accumulate. Read the server's `nextScheduledAt` and `history` rather than calculating a new start date locally.
 
-Audit lists show the server's pricing status when your connection has `billing:read`; genuine included monitoring requests use `included`. A missing pricing status does not mean a payment is due. Use `audits payment AUDIT_ID` for current payment requirements. Normal report publication and payment checks remain in force.
+Use `audits list` and `reports get` to read released reports within your selected projects. A paid audit submitted through `audits create` waits for spending approval in Tityra. Neither `audits:create` nor `monitoring:write` authorises credit spending. The CLI can pause monitoring, but cannot enable recurring charges, buy credits, choose a payer or change a subscription. Initial Audit requests retain their eligibility limits.
+
+Audit lists show the server's current funding status when the connection has `billing:read`. A missing status does not imply that payment is due. Publication, permission and funding checks remain in force.
 
 Monitoring commands require version `1.1.0` or later; version `1.0.0` does not include them. Read settings with `projects:read`. To change them, request `monitoring:write` through fresh consent; default scopes and existing connections stay unchanged. The `--scope` list replaces the defaults, so include any other access you still need.
 
@@ -95,20 +97,17 @@ tityra projects monitoring get PROJECT_ID --json
 tityra projects monitoring update PROJECT_ID --input monitoring.json --yes --json
 ```
 
-For `monitoring.json`, copy the current `revision` and `website` into `expectedRevision` and `expectedWebsite`, and generate a UUID once for the intended action:
+To pause with `monitoring.json`, copy the current `revision` into `expectedRevision` and generate a UUID once for the intended action:
 
 ```json
 {
-  "action": "enable",
-  "expectedRevision": 0,
-  "expectedWebsite": "https://example.com/",
-  "authorisation": true,
-  "auditScope": { "mode": "website" },
+  "action": "disable",
+  "expectedRevision": 1,
   "idempotencyKey": "10000000-0000-4000-8000-000000000001"
 }
 ```
 
-`enable` also resumes monitoring or changes its scope. To pause, send only `action: "disable"`, the current `expectedRevision` and a new action's `idempotencyKey`. Revision zero is valid for a project without settings. On an uncertain write, retry only the same input and key. The server checks the selected project, current manager, explicit payer, subscription and website. Confirm your authorisation again when changing the website or scope.
+Enable, resume or change a recurring credit budget in the Tityra application. The CLI can pause monitoring with `action: "disable"`, the current `expectedRevision` and a new action's `idempotencyKey`. Revision zero is valid for a project without settings. On an uncertain write, retry only the same input and key. The server checks the selected project and current management rights. Pausing remains available after subscription expiry.
 
 ### 3. Read reports, findings and discussions
 
@@ -151,19 +150,19 @@ tityra discussions create REPORT_ID FINDING_ID --input discussion.json --yes --j
 
 Other write commands use the same confirmation pattern:
 
-| Command                                            | Input fields besides `idempotencyKey`                                                                                                  |
-| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `audits create`                                    | `projectId`, `plan` (`free`, `automated`, `human`), `authorisation: true`; optional `notes`, `auditScope`                              |
-| `projects monitoring update PROJECT_ID`            | `action` (`enable`, `disable`), `expectedRevision`; enable requires `authorisation: true`, `expectedWebsite`, and accepts `auditScope` |
-| `findings challenge REPORT_ID FINDING_ID`          | `reason` (`irrelevant`, `false_positive`, `unclear_other`), `body`, `expectedReportRevision`                                           |
-| `discussions create REPORT_ID FINDING_ID`          | `body`, `expectedReportRevision`                                                                                                       |
-| `discussions reply REPORT_ID FINDING_ID THREAD_ID` | `body`, `expectedReportRevision`, `expectedThreadRevision`                                                                             |
-| `findings remediate REPORT_ID FINDING_ID`          | `status`, `reason`, `expectedReportRevision`, `expectedTrackingRevision`                                                               |
-| `reports checkout REPORT_ID`                       | No additional fields                                                                                                                   |
+| Command                                            | Input fields besides `idempotencyKey`                                                                         |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `audits create`                                    | `projectId`, `plan` (`free`, `automated`, `human`), `authorisation: true`; optional `notes`, `auditScope`     |
+| `projects monitoring update PROJECT_ID`            | `action: "disable"`, `expectedRevision`; approve or change recurring credit budgets in the Tityra application |
+| `findings challenge REPORT_ID FINDING_ID`          | `reason` (`irrelevant`, `false_positive`, `unclear_other`), `body`, `expectedReportRevision`                  |
+| `discussions create REPORT_ID FINDING_ID`          | `body`, `expectedReportRevision`                                                                              |
+| `discussions reply REPORT_ID FINDING_ID THREAD_ID` | `body`, `expectedReportRevision`, `expectedThreadRevision`                                                    |
+| `findings remediate REPORT_ID FINDING_ID`          | `status`, `reason`, `expectedReportRevision`, `expectedTrackingRevision`                                      |
+| `reports checkout REPORT_ID`                       | No additional fields                                                                                          |
 
 Read current revision fields using `--json` before changing a record. Discussion and challenge messages contain 3–4,000 characters. Remediation statuses are `open`, `planned`, `in_progress`, `resolved`, `wont_fix` and `not_applicable`; `resolved` remains customer-reported rather than independently verified.
 
-Audit scope is either `{"mode":"website"}` or `{"mode":"specific_urls","urls":["https://example.com/path"]}`. The project supplies the website. Normal audit requests record your explicit authorisation for that scope without a separate manual staff authority confirmation. Eligibility, scope and commercial checks still apply, and individually requested reports retain staff quality review. Monitoring reuses the confirmed project consent described above. Checkout creates a link for the customer to complete.
+Audit scope is either `{"mode":"website"}` or `{"mode":"specific_urls","urls":["https://example.com/path"]}`. The project supplies the website. Normal audit requests record your explicit authorisation for that scope without a separate manual staff authority confirmation. Eligibility, scope and commercial checks still apply, and individually requested reports retain staff quality review. Paid monitoring requires the separate recurring credit approval described above. Checkout creates a link for the customer to complete.
 
 ### 5. Use the CLI in scripts or with an agent
 

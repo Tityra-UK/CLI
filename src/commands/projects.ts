@@ -30,10 +30,10 @@ export function registerProjectsCommands(program: Command, context: ContextFacto
   writeOptions(
     monitoring
       .command('update <project-id>')
-      .description('Enable, pause, resume or update the scope of weekly website content audits')
+      .description('Pause weekly monitoring; approve recurring credit spending in Tityra')
       .addHelpText(
         'after',
-        '\nRequires an explicitly granted monitoring:write permission and current project management access.\nRead settings first; include the current expectedRevision and keep the same input and idempotencyKey when retrying an uncertain write.\nUse action enable with authorisation: true and the returned website as expectedWebsite. Use action disable to pause.\nEnabling monitoring records your website and scope authorisation without a separate administrator approval. Confirm that authorisation again after changing the website or scope.\nThe first included audit is due seven days after the first audit request for this project website, or after consent if none exists. Enabling or resuming an overdue eligible project queues its due website content audit automatically. Read nextScheduledAt and history for the current server state.\nThe CLI cannot select a payer or change a subscription.\n',
+        '\nRequires an explicitly granted monitoring:write permission and current project management access.\nRead settings first; include the current expectedRevision and keep the same input and idempotencyKey when retrying an uncertain write.\nUse action disable to pause. Enabling or resuming paid monitoring requires explicit recurring organisation credit approval in Tityra.\nmonitoring:write does not grant financial authority. Confirm website scope and the recurring credit budget in the application.\nEach scheduled audit consumes organisation credits, including on Enterprise. Insufficient credits pause new runs. Read nextScheduledAt and history for the current server state.\nThe CLI cannot select a payer or change a subscription.\n',
       ),
   ).action(async (id: string, _options: unknown, command: Command) => {
     await write(
