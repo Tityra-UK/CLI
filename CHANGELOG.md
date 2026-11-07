@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.2
+
+- Explain organisation prepaid credits and the Starter, Pro and Enterprise plans.
+- Update audit command help for credit budgets and spending approval in Tityra.
+- Clarify paid weekly monitoring and the CLI's pause-only financial boundary.
+
 ## 1.1.1
 
 - Update customer-facing audit terminology to describe website content audits.

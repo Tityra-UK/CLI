@@ -6,7 +6,7 @@ Tityra's website content audits review content delivery, structure and available
 
 ## Project status
 
-Version `1.1.1` updates the terminology used for Tityra's website content audit service. Version `1.1.0` added project monitoring commands and included-audit pricing status. Stable releases use npm's `latest` tag; check the [npm package page](https://www.npmjs.com/package/@tityra/cli) for the currently published version. CI targets Node.js 22 and 24 on Linux, macOS and Windows; local regression tests use isolated fixtures rather than live customer accounts.
+Version `1.1.2` updates audit and monitoring guidance for prepaid organisation credits. Credit purchases and spending approval take place in Tityra. Stable releases use npm's `latest` tag; check the [npm package page](https://www.npmjs.com/package/@tityra/cli) for the currently published version. CI targets Node.js 22 and 24 on Linux, macOS and Windows; local regression tests use isolated fixtures rather than live customer accounts.
 
 ## Basic functionality
 
