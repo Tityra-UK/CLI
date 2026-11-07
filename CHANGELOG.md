@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.3
+
+- Reject monitoring enablement before transport and direct customers to recurring credit approval in Tityra.
+- Describe funding errors without implying that monitoring needs a paid subscription.
+
 ## 1.1.2
 
 - Explain organisation prepaid credits and the Starter, Pro and Enterprise plans.

@@ -432,6 +432,26 @@ test('read commands map positional IDs and project filters to the documented acc
   assert.equal(context.requests.length, cases.length);
 });
 
+test('monitoring enablement fails with application guidance before any HTTP request', async (t) => {
+  const context = await fixture(t);
+  const result = await run(
+    context,
+    ['projects', 'monitoring', 'update', 'project-fixture', '--yes', '--input', '-'],
+    JSON.stringify({
+      action: 'enable',
+      expectedRevision: 0,
+      expectedWebsite: 'https://example.test/',
+      authorisation: true,
+      auditScope: { mode: 'website' },
+      idempotencyKey: KEY,
+    }),
+  );
+  assert.equal(result.code, 2);
+  assert.equal(JSON.parse(result.stderr).error.code, 'invalid_arguments');
+  assert.match(JSON.parse(result.stderr).error.message, /recurring organisation credit budget/);
+  assert.equal(context.requests.length, 0);
+});
+
 test('monitoring, finding, discussion and checkout mutations preserve their exact method, revisions and stable body', async (t) => {
   const context = await fixture(t, (_request, response) => {
     response.writeHead(200, { 'Content-Type': 'application/json' });
@@ -446,11 +466,8 @@ test('monitoring, finding, discussion and checkout mutations preserve their exac
       method: 'PATCH',
       path: '/api/agent/projects/project-fixture/monitoring',
       body: {
-        action: 'enable',
+        action: 'disable',
         expectedRevision: 0,
-        expectedWebsite: 'https://example.test/',
-        authorisation: true,
-        auditScope: { mode: 'website' },
         idempotencyKey: KEY,
       },
     },

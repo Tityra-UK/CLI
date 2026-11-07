@@ -10,12 +10,9 @@ import { ApiClient } from '../dist/services/apiClient.js';
 import { DEFAULT_SCOPES } from '../dist/services/authService.js';
 
 const input = {
-  action: 'enable',
-  expectedRevision: 0,
+  action: 'disable',
+  expectedRevision: 1,
   idempotencyKey: '10000000-0000-4000-8000-000000000001',
-  authorisation: true,
-  expectedWebsite: 'https://example.test/',
-  auditScope: { mode: 'specific_urls', urls: ['https://example.test/about'] },
 };
 
 function command(api) {
@@ -48,10 +45,10 @@ test('monitoring reads use the selected project API path and preserve the comple
   assert.equal(calls.length, 1);
 });
 
-test('confirmed monitoring changes PATCH the exact reviewed revision, scope and action key', async (t) => {
+test('confirmed monitoring pauses PATCH only the exact reviewed revision and action key', async (t) => {
   const file = await inputFile(t);
   const calls = [];
-  const view = { revision: 1, status: 'active' };
+  const view = { revision: 2, status: 'paused' };
   const cli = command({ request: async (...args) => (calls.push(args), view) });
   await assert.rejects(cli.run(['projects', 'monitoring', 'update', 'project-1', '--input', file]));
   assert.equal(calls.length, 0);
@@ -60,7 +57,7 @@ test('confirmed monitoring changes PATCH the exact reviewed revision, scope and 
   assert.deepEqual(cli.output, [view]);
 });
 
-test('monitoring input rejects approval, forged commercial fields and missing consent before transport', () => {
+test('monitoring input rejects approval, enablement and unsupported fields before transport', () => {
   for (const change of [
     { action: 'approve' },
     { action: 'enable', authorityReference: 'not a staff review' },
@@ -73,11 +70,13 @@ test('monitoring input rejects approval, forged commercial fields and missing co
     { authorisation: false },
     { authorisation: undefined },
     { expectedWebsite: undefined },
+    { auditScope: undefined },
     { expectedWebsite: 'file:///private/account' },
     { expectedWebsite: 'https://user:secret@example.test/' },
     { idempotencyKey: '' },
     { auditScope: { mode: 'website', urls: ['https://example.test/'] } },
     { auditScope: { mode: 'specific_urls', urls: [] } },
+    { action: { toString: () => 'disable' } },
   ]) {
     assert.throws(
       () => validateWrite('monitoring', { ...input, ...change }),
@@ -88,13 +87,36 @@ test('monitoring input rejects approval, forged commercial fields and missing co
   assert.equal(validateWrite('monitoring', input), input);
 });
 
+test('legacy monitoring enablement directs the customer to recurring credit approval without transport', async (t) => {
+  const file = await inputFile(t, {
+    ...input,
+    action: 'enable',
+    authorisation: true,
+    expectedWebsite: 'https://example.test/',
+    auditScope: { mode: 'website' },
+  });
+  let calls = 0;
+  const cli = command({ request: async () => calls++ });
+  await assert.rejects(
+    cli.run(['projects', 'monitoring', 'update', 'project-1', '--input', file, '--yes']),
+    (error) => {
+      assert.equal(error.code, 'invalid_arguments');
+      assert.equal(error.exitCode, 2);
+      assert.match(error.message, /Enable or resume monitoring in Tityra/);
+      assert.match(error.message, /recurring organisation credit budget/);
+      return true;
+    },
+  );
+  assert.equal(calls, 0);
+});
+
 test('pause input retains revision zero and rejects hidden scope or consent changes', () => {
   const pause = { action: 'disable', expectedRevision: 0, idempotencyKey: input.idempotencyKey };
   assert.equal(validateWrite('monitoring', pause), pause);
   for (const change of [
     { authorisation: true },
-    { expectedWebsite: input.expectedWebsite },
-    { auditScope: input.auditScope },
+    { expectedWebsite: 'https://example.test/' },
+    { auditScope: { mode: 'website' } },
   ])
     assert.throws(() => validateWrite('monitoring', { ...pause, ...change }));
   assert.equal(DEFAULT_SCOPES.includes('monitoring:write'), false);
@@ -138,7 +160,8 @@ test('monitoring entitlement and revision errors stay safe and never retry the w
     api.request('/api/agent/projects/project-1/monitoring', 'PATCH', input),
     (error) => {
       assert.equal(error.code, 'http_402');
-      assert.match(error.message, /subscription/);
+      assert.match(error.message, /organisation credit budget and current access/);
+      assert.doesNotMatch(error.message, /subscription/);
       assert.doesNotMatch(error.message, /private provider details/);
       return true;
     },

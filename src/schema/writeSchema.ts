@@ -34,6 +34,10 @@ export function validateWrite(kind: WriteKind, input: unknown): Record<string, u
   if (input === null || typeof input !== 'object' || Array.isArray(input))
     usage('--input must contain a JSON object.');
   const body = input as Record<string, unknown>;
+  if (kind === 'monitoring' && body.action === 'enable')
+    usage(
+      'Enable or resume monitoring in Tityra, where an authorised spender approves the recurring organisation credit budget. The CLI can only pause monitoring.',
+    );
   const fields: Record<WriteKind, string[]> = {
     audit: ['projectId', 'plan', 'idempotencyKey', 'authorisation', 'notes', 'auditScope'],
     challenge: ['reason', 'body', 'expectedReportRevision', 'idempotencyKey'],
@@ -47,14 +51,7 @@ export function validateWrite(kind: WriteKind, input: unknown): Record<string, u
       'idempotencyKey',
     ],
     checkout: ['idempotencyKey'],
-    monitoring: [
-      'action',
-      'expectedRevision',
-      'idempotencyKey',
-      'authorisation',
-      'expectedWebsite',
-      'auditScope',
-    ],
+    monitoring: ['action', 'expectedRevision', 'idempotencyKey'],
   };
   if (Object.keys(body).some((key) => !fields[kind].includes(key)))
     usage('Input contains an unsupported field. Use the documented request body.');
@@ -71,31 +68,11 @@ export function validateWrite(kind: WriteKind, input: unknown): Record<string, u
       usage(`${key} must be a positive integer from the current server response.`);
   };
   if (kind === 'monitoring') {
-    if (!['enable', 'disable'].includes(String(body.action)))
-      usage('Monitoring action must be enable or disable.');
+    if (body.action !== 'disable') usage('Monitoring action must be disable.');
     if (!Number.isSafeInteger(body.expectedRevision) || Number(body.expectedRevision) < 0)
       usage(
         'expectedRevision must be a non-negative integer from the current monitoring response.',
       );
-    if (body.action === 'enable') {
-      if (body.authorisation !== true)
-        usage('Enabling monitoring requires explicit authorisation: true.');
-      text('expectedWebsite', 1, 2000);
-      let website: URL;
-      try {
-        website = new URL(body.expectedWebsite as string);
-      } catch {
-        usage('expectedWebsite must be the website returned by the monitoring response.');
-      }
-      if (!['http:', 'https:'].includes(website.protocol) || website.username || website.password)
-        usage('expectedWebsite must be an HTTP(S) website without credentials.');
-      validateAuditScope(body.auditScope);
-    } else if (
-      body.authorisation !== undefined ||
-      body.expectedWebsite !== undefined ||
-      body.auditScope !== undefined
-    )
-      usage('Pausing monitoring accepts only action, expectedRevision and idempotencyKey.');
   } else if (kind === 'audit') {
     if (typeof body.projectId !== 'string') usage('projectId is required.');
     identifier(body.projectId);
