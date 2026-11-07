@@ -4,7 +4,8 @@
 
 - Explain organisation prepaid credits and the Starter, Pro and Enterprise plans.
 - Update audit command help for credit budgets and spending approval in Tityra.
-- Clarify paid weekly monitoring and the CLI's pause-only financial boundary.
+- Make the 100-page limit explicit for In-Depth Audits and weekly monitoring.
+- Clarify credit-funded monitoring on every plan and the CLI's pause-only financial boundary.
 
 ## 1.1.1
 
