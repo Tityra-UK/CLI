@@ -53,6 +53,11 @@ const opaque = (value: unknown): value is string =>
   /^[A-Za-z0-9._~+/-]+=*$/.test(value);
 const loopback = (hostname: string) => ['127.0.0.1', 'localhost', '[::1]'].includes(hostname);
 
+function assertAuthorizationActive(signal?: AbortSignal | null): void {
+  if (signal?.aborted)
+    throw new AuthError('Authorisation was cancelled.', 'authorization_cancelled');
+}
+
 export function normalizeBaseUrl(value = DEFAULT_BASE_URL, allowLocalhost = false): string {
   let url: URL;
   try {
@@ -99,20 +104,25 @@ async function jsonRequest(
   init: RequestInit = {},
   operation = 'authorisation',
 ): Promise<JsonRecord> {
+  assertAuthorizationActive(init.signal);
   let response: Response;
   try {
     response = await fetch(url, {
       ...init,
       redirect: 'error',
       credentials: 'omit',
-      signal: init.signal || AbortSignal.timeout(15000),
+      signal: init.signal
+        ? AbortSignal.any([init.signal, AbortSignal.timeout(15000)])
+        : AbortSignal.timeout(15000),
     });
   } catch {
+    assertAuthorizationActive(init.signal);
     throw new AuthError(
       `The ${operation} request could not be completed. No automatic retry was made.`,
       'network_error',
     );
   }
+  assertAuthorizationActive(init.signal);
   if (!response.ok) {
     await response.body?.cancel();
     throw new AuthError(
@@ -146,6 +156,7 @@ async function jsonRequest(
     }
   } catch (error) {
     if (error instanceof AuthError) throw error;
+    assertAuthorizationActive(init.signal);
     throw new AuthError(
       'The OAuth response could not be read. No automatic retry was made.',
       'network_error',
@@ -153,6 +164,7 @@ async function jsonRequest(
   } finally {
     reader.releaseLock();
   }
+  assertAuthorizationActive(init.signal);
   const bytes = new Uint8Array(size);
   let offset = 0;
   for (const chunk of chunks) {
@@ -171,11 +183,12 @@ async function jsonRequest(
 export async function discoverAuthorizationServer(
   baseUrl = DEFAULT_BASE_URL,
   allowLocalhost = false,
+  signal?: AbortSignal,
 ): Promise<Metadata> {
   const issuer = normalizeBaseUrl(baseUrl, allowLocalhost);
   const metadata = await jsonRequest(
     issuer + '/.well-known/oauth-authorization-server',
-    {},
+    { signal },
     'discovery',
   );
   if (
@@ -398,7 +411,12 @@ export async function login(
     signal?: AbortSignal;
   } = {},
 ): Promise<{ issuer: string; scopes: string[]; expiresAt: string }> {
-  const metadata = await discoverAuthorizationServer(options.baseUrl, options.allowLocalhost);
+  assertAuthorizationActive(options.signal);
+  const metadata = await discoverAuthorizationServer(
+    options.baseUrl,
+    options.allowLocalhost,
+    options.signal,
+  );
   const scopes = [...new Set(options.scopes || DEFAULT_SCOPES)];
   if (!scopes.length || scopes.some((scope) => !metadata.scopes_supported.includes(scope)))
     throw new AuthError('Request one or more supported OAuth permissions.', 'invalid_scope');
@@ -415,6 +433,7 @@ export async function login(
       metadata.registration_endpoint,
       {
         method: 'POST',
+        signal: options.signal,
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify({
           client_name: 'Tityra CLI',
@@ -451,26 +470,34 @@ export async function login(
       state,
     }))
       url.searchParams.set(key, value);
+    assertAuthorizationActive(options.signal);
     if (options.onAuthorize) await options.onAuthorize(url.href);
     else
       process.stderr.write(`Open this URL in your browser to authorise Tityra CLI:\n${url.href}\n`);
     const code = await callback.code;
+    assertAuthorizationActive(options.signal);
     const tokens = await jsonRequest(
       metadata.token_endpoint,
-      postForm(
-        new URLSearchParams({
-          grant_type: 'authorization_code',
-          client_id: client.client_id,
-          code,
-          redirect_uri: callback.redirectUri,
-          code_verifier: verifier,
-          resource: metadata.issuer + '/mcp',
-        }),
-      ),
+      {
+        ...postForm(
+          new URLSearchParams({
+            grant_type: 'authorization_code',
+            client_id: client.client_id,
+            code,
+            redirect_uri: callback.redirectUri,
+            code_verifier: verifier,
+            resource: metadata.issuer + '/mcp',
+          }),
+        ),
+        signal: options.signal,
+      },
       'token exchange',
     );
     const credentials = tokenCredentials(tokens, metadata.issuer, client.client_id, scopes);
-    await (options.store || new CredentialStore()).write(credentials);
+    await (options.store || new CredentialStore()).withLock(metadata.issuer, async (locked) => {
+      assertAuthorizationActive(options.signal);
+      await locked.write(credentials);
+    });
     return {
       issuer: credentials.issuer,
       scopes: credentials.scopes,

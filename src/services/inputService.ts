@@ -53,7 +53,7 @@ export async function writeInput(
   if (bytes.length > limit) usage('Input must not exceed 64 KiB.');
   let input: unknown;
   try {
-    input = JSON.parse(bytes.toString('utf8'));
+    input = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
   } catch {
     usage('The input is not valid JSON.');
   }

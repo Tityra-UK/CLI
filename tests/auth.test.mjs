@@ -233,6 +233,40 @@ test('denial and timeout save no credentials or token grants', async (t) => {
   );
 });
 
+for (const stage of ['before login', 'discovery', 'token exchange']) {
+  test(`cancelled login during ${stage} stops authorisation and never saves credentials`, async (t) => {
+    const controller = new AbortController();
+    const f = await fixture(t, {
+      metadata: (value) => {
+        if (stage === 'discovery') controller.abort();
+        return value;
+      },
+      handler: async (request) => {
+        if (stage === 'token exchange' && request.url === '/token') controller.abort();
+        return false;
+      },
+    });
+    if (stage === 'before login') controller.abort();
+    let authorisations = 0;
+    await assert.rejects(
+      login({
+        ...f.options,
+        signal: controller.signal,
+        onAuthorize: async (value) => {
+          authorisations++;
+          if (stage === 'token exchange') await fetch(callbackUrl(value));
+        },
+      }),
+      { code: 'authorization_cancelled' },
+    );
+    assert.equal(await f.store.read(f.issuer), undefined);
+    if (stage === 'before login') assert.equal(f.requests.length, 0);
+    if (stage === 'discovery') assert.equal(f.requests.length, 1);
+    assert.equal(authorisations, stage === 'token exchange' ? 1 : 0);
+    assert.ok(f.requests.filter((request) => request.path === '/token').length <= 1);
+  });
+}
+
 test('discovery refuses issuer mismatch and foreign endpoints before sending credentials', async (t) => {
   const f = await fixture(t, {
     metadata: (metadata) => ({ ...metadata, token_endpoint: 'https://evil.example/token' }),

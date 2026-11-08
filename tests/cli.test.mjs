@@ -183,6 +183,27 @@ test('oversized file and stdin inputs fail before making an account request', as
   assert.equal(context.requests.length, 0);
 });
 
+for (const source of ['file', 'stdin'])
+  test(`invalid UTF-8 ${source} input is rejected without rewriting a confirmed mutation`, async (t) => {
+    const context = await fixture(t);
+    const bytes = Buffer.concat([
+      Buffer.from(
+        `{"projectId":"project-fixture","plan":"free","authorisation":true,"idempotencyKey":"${KEY}","notes":"Before `,
+      ),
+      Buffer.from([0xc3, 0x28]),
+      Buffer.from(' after"}'),
+    ]);
+    const input = join(context.directory, 'invalid-utf8.json');
+    await writeFile(input, bytes);
+    const result = await run(
+      context,
+      ['audits', 'create', '--yes', '--input', source === 'file' ? input : '-'],
+      source === 'stdin' ? bytes : '',
+    );
+    safeError(result);
+    assert.equal(context.requests.length, 0);
+  });
+
 test('human output falls back to complete JSON for malformed list rows instead of crashing', async (t) => {
   const body = { projects: [null, 17, ['unexpected'], { id: 'project-fixture', name: 'Fixture' }] };
   const context = await fixture(t, (_request, response) => {
