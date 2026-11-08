@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.4
+
+- Stop cancelled OAuth sign-in during discovery and token exchange without saving credentials.
+- Reject malformed UTF-8 JSON from files and standard input before sending account changes.
+- Update the development dependency override for the minimatch security fix.
+
 ## 1.1.3
 
 - Reject monitoring enablement before transport and direct customers to recurring credit approval in Tityra.

@@ -6,7 +6,7 @@ Tityra's website content audits review content delivery, structure and available
 
 ## Project status
 
-Version `1.1.3` rejects unsupported monitoring enablement before sending a request and directs customers to recurring credit approval in Tityra. Funding errors no longer imply that monitoring needs a paid subscription. Credit purchases and spending approval take place in Tityra. Stable releases use npm's `latest` tag; check the [npm package page](https://www.npmjs.com/package/@tityra/cli) for the currently published version. CI targets Node.js 22 and 24 on Linux, macOS and Windows; local regression tests use isolated fixtures rather than live customer accounts.
+Version `1.1.4` stops cancelled OAuth sign-in from continuing authorisation or saving credentials, and rejects malformed UTF-8 JSON before sending account changes. Credit purchases and spending approval take place in Tityra. Stable releases use npm's `latest` tag; check the [npm package page](https://www.npmjs.com/package/@tityra/cli) for the currently published version. CI targets Node.js 22 and 24 on Linux, macOS and Windows; local regression tests use isolated fixtures rather than live customer accounts.
 
 ## Basic functionality
 
