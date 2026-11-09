@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.5
+
+- Add agent skills for public audit planning, released report review and authorised finding updates.
+- Include the skills in the npm package and document installation from the official repository.
+- Preserve selected-project access, revision checks and stable retry keys in agent workflows.
+
 ## 1.1.4
 
 - Stop cancelled OAuth sign-in during discovery and token exchange without saving credentials.
