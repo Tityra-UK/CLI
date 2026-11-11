@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.6
+
+- Explain included monthly audits and the fixed 19-credit In-Depth Audit price.
+- Document current Pro and Enterprise monthly and annual subscriptions.
+- Keep audit credit spending and recurring approval in Tityra.
+- Identify TITYRA LTD as the package operator.
+
 ## 1.1.5
 
 - Add agent skills for public audit planning, released report review and authorised finding updates.
