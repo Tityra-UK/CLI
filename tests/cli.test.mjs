@@ -21,7 +21,7 @@ test('audit creation help separates explicit request authorisation from report q
   assert.match(help, /Individually requested reports retain staff quality review/);
   assert.match(
     help,
-    /In-Depth Audits, Expert Reviews and weekly monitoring use prepaid organisation credits/,
+    /In-Depth Audits cover up to 100 pages using an included monthly audit first, otherwise 19 credits/,
   );
   assert.match(help, /Existing OAuth permissions do not authorise credit spending/);
   assert.match(help, /--yes/);
