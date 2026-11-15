@@ -129,6 +129,62 @@ test('HTTP errors use stable safe messages instead of server error bodies', asyn
   }
 });
 
+test('an explicit organisation SSO error requires browser reauthorisation without exposing response data', async (t) => {
+  let status = 401;
+  let requests = 0;
+  const origin = await server(t, (_request, response) => {
+    requests++;
+    json(response, status, {
+      code: 'ORGANIZATION_SSO_REQUIRED',
+      error: TOKEN,
+      organisation: 'private-organisation',
+      redirectUrl: 'https://attacker.example/sign-in',
+    });
+  });
+  const client = new ApiClient(origin, async () => TOKEN);
+  for (const httpStatus of [401, 403]) {
+    status = httpStatus;
+    await assert.rejects(client.request('/api/agent/projects'), (error) => {
+      assert.equal(error.code, 'reauthorization_required');
+      assert.equal(error.exitCode, 3);
+      assert.equal(error.status, httpStatus);
+      assert.match(error.message, /tityra auth login.*browser/);
+      assert.doesNotMatch(
+        JSON.stringify(error) + String(error),
+        /fixture-access-token|private-organisation|attacker\.example/,
+      );
+      return true;
+    });
+  }
+  assert.equal(requests, 2, 'Resource requests are not automatically retried');
+});
+
+test('only the exact SSO machine code and authentication status change the CLI exit semantics', async (t) => {
+  let status = 403,
+    contentType = 'application/json',
+    body = '{}';
+  const origin = await server(t, (_request, response) => {
+    response.writeHead(status, { 'Content-Type': contentType });
+    response.end(body);
+  });
+  const client = new ApiClient(origin, async () => TOKEN);
+  for (const value of [
+    { code: 'OTHER_PERMISSION_ERROR', error: 'ORGANIZATION_SSO_REQUIRED' },
+    { code: ['ORGANIZATION_SSO_REQUIRED'] },
+    { error: { code: 'ORGANIZATION_SSO_REQUIRED' } },
+    ['ORGANIZATION_SSO_REQUIRED'],
+  ]) {
+    body = JSON.stringify(value);
+    await assert.rejects(client.request('/api/agent/projects'), { code: 'http_403', exitCode: 4 });
+  }
+  body = JSON.stringify({ code: 'ORGANIZATION_SSO_REQUIRED', error: TOKEN });
+  contentType = 'text/html';
+  await assert.rejects(client.request('/api/agent/projects'), { code: 'http_403', exitCode: 4 });
+  contentType = 'application/json';
+  status = 409;
+  await assert.rejects(client.request('/api/agent/projects'), { code: 'http_409', exitCode: 5 });
+});
+
 test('unreadable JSON does not echo HTML or token-like response content', async (t) => {
   const origin = await server(t, (_request, response) => {
     response.writeHead(200, { 'Content-Type': 'text/html' });

@@ -6,7 +6,7 @@ Tityra's website content audits review content delivery, structure and available
 
 ## Project status
 
-Version `1.1.5` includes agent skills for audit planning, report review and authorised finding updates. Credit purchases and spending approval take place in Tityra. Stable releases use npm's `latest` tag; check the [npm package page](https://www.npmjs.com/package/@tityra/cli) for the currently published version. CI targets Node.js 22 and 24 on Linux, macOS and Windows; local regression tests use isolated fixtures rather than live customer accounts.
+Version `1.1.7` recognises organisation SSO renewal and guides browser sign-in. It includes agent skills for audit planning, report review and authorised finding updates. Credit purchases and spending approval take place in Tityra. Stable releases use npm's `latest` tag; check the [npm package page](https://www.npmjs.com/package/@tityra/cli) for the currently published version. CI targets Node.js 22 and 24 on Linux, macOS and Windows; local regression tests use isolated fixtures rather than live customer accounts.
 
 ## Basic functionality
 
@@ -58,6 +58,10 @@ tityra auth logout
 ```
 
 Logout revokes this CLI's stored connection before removing its credentials. It does not revoke a token supplied through the environment. You can manage older grants under [Connected applications](https://app.tityra.com/customer/profile#connected-applications).
+
+If your organisation requires SSO, complete its SAML or OpenID Connect sign-in in the browser before reviewing the same OAuth consent page. The CLI receives scoped Tityra tokens; enter identity provider credentials only on your provider's sign-in page.
+
+An SSO-authorised connection is limited to that organisation and the projects selected at consent. Its organisation sign-in proof lasts up to eight hours from the SSO sign-in; refreshing an OAuth token does not extend that proof. Run `tityra auth login` again when a new sign-in is required. To work in another organisation, sign in there and review a new connection's selected projects. Organisation owners configure SSO and SCIM in Tityra. SCIM can remove membership and project access, which existing CLI tokens cannot override.
 
 ### 2. Explore projects and audit requests
 
@@ -205,15 +209,16 @@ Account workflows use the separately installed Tityra CLI and the user's existin
 
 ## Troubleshooting
 
-| Symptom                        | What to check                                                                                                           |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| Authentication fails, exit `3` | Run `tityra auth login`. If `TITYRA_ACCESS_TOKEN` is set, replace or remove it first; browser login cannot override it. |
-| Permission denied, exit `4`    | Check the selected projects and required scopes. Additional permissions require new consent.                            |
-| Revision conflict, exit `5`    | Refresh the record and review the intended change against current revisions.                                            |
-| A write cannot be confirmed    | Check its result before retrying. Preserve the original input and idempotency key for the same action.                  |
-| A PDF file already exists      | Choose a new `--output` filename. Existing files are never overwritten.                                                 |
-| The browser does not open      | Use `tityra auth login --no-browser` and open its URL on the same computer.                                             |
-| A list is incomplete           | Use `--page`, `--page-size` and `--json`; review the returned pagination fields.                                        |
+| Symptom                        | What to check                                                                                                                                        |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Authentication fails, exit `3` | Run `tityra auth login`. If `TITYRA_ACCESS_TOKEN` is set, replace or remove it first; browser login cannot override it.                              |
+| Organisation SSO needs renewal | Run `tityra auth login` and complete organisation sign-in in the browser. SSO proof expires after up to eight hours, independently of OAuth refresh. |
+| Permission denied, exit `4`    | Check the selected projects and required scopes. Additional permissions require new consent.                                                         |
+| Revision conflict, exit `5`    | Refresh the record and review the intended change against current revisions.                                                                         |
+| A write cannot be confirmed    | Check its result before retrying. Preserve the original input and idempotency key for the same action.                                               |
+| A PDF file already exists      | Choose a new `--output` filename. Existing files are never overwritten.                                                                              |
+| The browser does not open      | Use `tityra auth login --no-browser` and open its URL on the same computer.                                                                          |
+| A list is incomplete           | Use `--page`, `--page-size` and `--json`; review the returned pagination fields.                                                                     |
 
 Exit `0` means success, `1` a network/storage/other request failure, and `2` invalid command or input. Use `tityra <command> --help` to check arguments.
 

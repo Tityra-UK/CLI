@@ -537,7 +537,7 @@ export async function getAccessToken(options: AuthOptions = {}): Promise<string>
     if (Date.parse(saved.expiresAt) > Date.now() + 30000) return saved.accessToken;
     if (!saved.refreshToken)
       throw new AuthError(
-        'This connection cannot be refreshed safely. Run tityra auth login again.',
+        'This connection cannot be refreshed safely. Run tityra auth login again and complete organisation SSO in your browser if required.',
         'reauthorization_required',
       );
     const metadata = await discoverAuthorizationServer(issuer, options.allowLocalhost);
@@ -567,7 +567,7 @@ export async function getAccessToken(options: AuthOptions = {}): Promise<string>
         (error.status === 400 || error.status === 401)
       ) {
         throw new AuthError(
-          'This connection expired or was revoked. Run tityra auth login again.',
+          'This connection expired, was revoked, or needs a new organisation sign-in. Run tityra auth login again and complete SSO in your browser if required.',
           'reauthorization_required',
           error.status,
         );

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.7
+
+- Recognise organisation SSO renewal as an authentication failure and direct users to browser sign-in without exposing private server responses.
+- Document the organisation scope and eight-hour limit of SSO-authorised connections, including access removed through SCIM.
+
 ## 1.1.6
 
 - Explain included monthly audits and the fixed 19-credit In-Depth Audit price.

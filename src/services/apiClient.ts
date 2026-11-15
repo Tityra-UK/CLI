@@ -97,9 +97,34 @@ export class ApiClient {
       return bytes;
     }
     if (!response.ok) {
+      if (
+        (response.status === 401 || response.status === 403) &&
+        response.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase() ===
+          'application/json'
+      ) {
+        let error: unknown;
+        try {
+          error = JSON.parse(Buffer.from(bytes).toString('utf8'));
+        } catch {
+          // Error bodies remain untrusted. Only this exact machine code changes the advice.
+        }
+        if (
+          error !== null &&
+          typeof error === 'object' &&
+          !Array.isArray(error) &&
+          'code' in error &&
+          error.code === 'ORGANIZATION_SSO_REQUIRED'
+        )
+          throw new CliError(
+            'reauthorization_required',
+            'Your organisation requires a new SSO sign-in. Run tityra auth login and complete organisation sign-in in your browser. If access was removed, contact your organisation owner.',
+            3,
+            response.status,
+          );
+      }
       const message =
         response.status === 401
-          ? 'Your session expired or was revoked. Run tityra auth login.'
+          ? 'Your session expired or was revoked. Run tityra auth login. If your organisation uses SSO, complete its sign-in in your browser.'
           : response.status === 403
             ? 'Your connection does not have permission for this project or action. Review its scopes and project access.'
             : response.status === 402

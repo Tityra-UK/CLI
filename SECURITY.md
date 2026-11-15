@@ -25,6 +25,14 @@ connection does not grant staff authority, bypass a report payment gate, verify
 a remediation claim or authorise automatic payment. Security checks on the
 Tityra server remain authoritative.
 
+Organisation SSO runs in the browser before OAuth consent. The CLI handles
+Tityra access and refresh tokens, without storing IdP passwords, SAML assertions
+or OIDC ID tokens. An SSO-authorised grant carries the server's proof for one
+organisation, valid for up to eight hours from sign-in. Refreshing a token does
+not extend that proof or add organisations and projects. Reconnect through
+`tityra auth login` when required. SCIM deprovisioning and current membership
+checks can remove access before a token's advertised expiry.
+
 Treat the CLI configuration directory as sensitive: it can contain OAuth
 credentials. Keep it out of source control, container images, logs and issue
 attachments. On POSIX systems, credentials use a mode-0600 file in a mode-0700

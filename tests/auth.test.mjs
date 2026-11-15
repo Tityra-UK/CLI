@@ -330,6 +330,7 @@ for (const status of [400, 401]) {
       (error) =>
         error.code === 'reauthorization_required' &&
         error.status === status &&
+        /tityra auth login.*SSO.*browser/.test(error.message) &&
         !error.message.includes('private-grant-details'),
     );
     assert.equal((await f.store.read(f.issuer)).refreshToken, undefined);

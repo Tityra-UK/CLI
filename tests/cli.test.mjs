@@ -696,6 +696,25 @@ test('PDF authentication failure keeps its authentication exit code and removes 
   assert.equal(context.requests.length, 0);
 });
 
+test('organisation SSO renewal exits as authentication with safe browser advice and no automatic retry', async (t) => {
+  const context = await fixture(t, (_request, response) => {
+    response.writeHead(401, { 'Content-Type': 'application/json' });
+    response.end(
+      JSON.stringify({
+        code: 'ORGANIZATION_SSO_REQUIRED',
+        error: TOKEN,
+        redirectUrl: 'https://attacker.example/steal',
+      }),
+    );
+  });
+  const result = await run(context, ['projects', 'list']);
+  const { error } = safeError(result, 3);
+  assert.equal(error.code, 'reauthorization_required');
+  assert.match(error.message, /tityra auth login.*browser/);
+  assert.doesNotMatch(result.stderr, /attacker\.example/);
+  assert.equal(context.requests.length, 1);
+});
+
 test('PDF download requires a positive exact revision and output path before making a request', async (t) => {
   const context = await fixture(t);
   for (const flags of [
