@@ -158,10 +158,6 @@ Bug reports, documentation fixes and pull requests are welcome. Use a small exam
 2. Open an issue describing the change. For a code fix, add a regression test and run the checks in the contribution guide.
 3. Submit a pull request with your change and the checks you ran.
 
-## Credits
-
-[Tityra](https://tityra.com) maintains the CLI. Parts of the repository setup were adapted from Doğu Abaris's MIT-licensed CLI projects. [Notices](https://github.com/Tityra-UK/CLI/blob/main/NOTICE).
-
 ## License
 
 [MIT licence](https://github.com/Tityra-UK/CLI/blob/main/LICENSE).
