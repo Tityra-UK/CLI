@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.9
+
+- Rewrite the README with installation, sign-in and command examples for working with Tityra audits, reports and findings.
+
 ## 1.1.8
 
 - Decode report and finding responses directly from the received buffer. PDF downloads now check the first five bytes without copying the document.

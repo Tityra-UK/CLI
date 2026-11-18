@@ -1,263 +1,127 @@
-# Tityra CLI
+## Tityra CLI
 
-Your Tityra workspace, from the terminal. Explore projects, read audit reports and work through findings from the command line, scripts or an AI agent.
+Read a website audit in your terminal. You can look up a project, see the evidence behind a finding and ask your audit team a question. Scripts can read the same results as JSON.
 
-Tityra's website content audits review content delivery, structure and available context within an agreed website scope. Reports document findings and supporting evidence. The CLI is an API client for the Tityra service and uses the same account permissions, selected projects and customer workflows as the application.
+Project status: Actively maintained.
 
-## Project status
+### Basic functionality
 
-Version `1.1.8` reduces memory use when reading reports and findings or downloading a published PDF. The CLI recognises organisation SSO renewal and guides browser sign-in. It includes agent skills for audit planning, report review and authorised finding updates. Credit purchases and spending approval take place in Tityra. Stable releases use npm's `latest` tag; check the [npm package page](https://www.npmjs.com/package/@tityra/cli) for the currently published version. CI targets Node.js 22 and 24 on Linux, macOS and Windows; local regression tests use isolated fixtures rather than live customer accounts.
+Tityra CLI is for people who already use Tityra to manage website audits. Choose a project from your account to see its audit requests, read the evidence for a finding or download a published report. If you manage findings, you can also start a discussion or record progress on a fix. For the API and source layout, see the [developer documentation](#developer-documentation).
 
-## Basic functionality
+### What Tityra CLI does not do
 
-- Opens an interactive workspace with browser sign-in, project selection and persistent navigation.
-- Lists audit options and requests, reads released reports and findings, and downloads a published PDF revision.
-- Submits audit requests, finding challenges, discussions and customer-reported remediation with explicit confirmation.
-- Reads funding status. Organisation credit purchases and spending approval take place in Tityra.
-- Returns complete JSON records and stable exit codes for scripts and agents.
+The CLI cannot scan a website locally or verify that a fix works. Tityra runs the audits. You buy credits and approve spending in the Tityra app.
 
-## What it does not do
+## Prerequisites
 
-The CLI does not execute audits locally or independently verify website ownership. Your explicit `authorisation: true` declaration and the validated website scope provide the required request authorisation; no second manual staff confirmation of website authority is required. Individually requested reports retain Tityra's staff quality review. The CLI does not verify a fix, change technical report evidence, expose private staff notes or grant access to another customer's data. Checkout creates a link; it does not make a payment or authorise automatic charges.
-
-The interactive workspace offers read-only navigation. Account changes use the explicit commands described below and require reviewed JSON input plus `--yes`.
-
-## Prerequisites and installation
-
-You need **Node.js 22.14 or later**, a Tityra customer account and permission to access the projects you select. Staff operations are not delegated through this connection. Browser login requires the browser to reach the temporary loopback callback on the computer running the CLI.
-
-Install the stable release:
-
-```sh
-npm install -g @tityra/cli@latest
-tityra
-```
+You need a terminal, Node.js 22.14 or later with npm, and a Tityra customer account with access to a project. Have a browser available on the computer where you run the CLI.
 
 ## How to use Tityra CLI
 
-### 1. Connect your account and open the workspace
+### Install, sign in and choose a project
 
-```sh
-tityra
-tityra auth status --json
-```
+1. Install the CLI with `npm install -g @tityra/cli`.
+2. Run `tityra` in your terminal. On your first visit, it offers to open Tityra in your browser.
+3. Sign in, select the projects you want to work with and review the permissions.
+4. Return to your terminal. Use the arrow keys and Enter to choose a project and browse its audits. To use individual commands, leave the menu and run `tityra projects list` to find your project ID.
 
-Use the arrow keys and Enter to select a project and action. Escape or Ctrl+C exits. If you need to create a new connection explicitly:
+### Find a report and save its PDF
 
-```sh
-tityra auth login
-```
+1. Replace `PROJECT_ID` with your project ID to list its audit requests.
 
-Review the application, requested permissions and selected projects on Tityra's consent page. `--no-browser` prints the authorisation URL so you can open it yourself on the same computer.
+   ```sh
+   tityra audits list --project PROJECT_ID --json
+   ```
 
-The default connection requests read access: `projects:read`, `audits:read`, `reports:read`, `findings:read`, `discussions:read` and `billing:read`. To change permissions, use `auth login --scope "..."` and review fresh consent; the supplied list replaces the defaults. Existing grants do not automatically gain permissions.
+2. Choose a released audit. Run `tityra audits get AUDIT_ID --json` using its request ID and copy the `reportId` from the result. Read the report to find its revision.
 
-```sh
-tityra auth login --scope "projects:read reports:read findings:read findings:challenge discussions:read discussions:write remediation:write"
-tityra auth logout
-```
+   ```sh
+   tityra reports get REPORT_ID --json
+   ```
 
-Logout revokes this CLI's stored connection before removing its credentials. It does not revoke a token supplied through the environment. You can manage older grants under [Connected applications](https://app.tityra.com/customer/profile#connected-applications).
+3. Use the published revision number and a new filename. For example, to save revision 3:
 
-If your organisation requires SSO, complete its SAML or OpenID Connect sign-in in the browser before reviewing the same OAuth consent page. The CLI receives scoped Tityra tokens; enter identity provider credentials only on your provider's sign-in page.
+   ```sh
+   tityra reports download REPORT_ID --revision 3 --output report-v3.pdf
+   ```
 
-An SSO-authorised connection is limited to that organisation and the projects selected at consent. Its organisation sign-in proof lasts up to eight hours from the SSO sign-in; refreshing an OAuth token does not extend that proof. Run `tityra auth login` again when a new sign-in is required. To work in another organisation, sign in there and review a new connection's selected projects. Organisation owners configure SSO and SCIM in Tityra. SCIM can remove membership and project access, which existing CLI tokens cannot override.
+### Review findings and discussions
 
-### 2. Explore projects and audit requests
+1. List open findings with high severity. Use `--page 2` to read the next page.
 
-Replace the uppercase placeholders with IDs returned by Tityra:
+   ```sh
+   tityra findings list REPORT_ID --severity high --status open --json
+   ```
 
-```sh
-tityra projects list
-tityra audits options --project PROJECT_ID
-tityra audits list --project PROJECT_ID --page 1 --page-size 25
-tityra audits get AUDIT_ID
-tityra audits payment AUDIT_ID
-```
+2. Copy a finding ID from the results to read its discussion.
 
-Audit options describe the existing eligibility and review rules. A submitted request does not start an instant scan or promise a delivery date. Payment status provides the canonical report reference when available.
+   ```sh
+   tityra discussions list REPORT_ID FINDING_ID --json
+   ```
 
-### Workspace plans and weekly monitoring
+### Ask a question about a finding
 
-All plans support unlimited organisations and projects. Starter includes two members, Pro includes 10 members and 5 In-Depth Audits at £59/month or £590/year, and Enterprise includes unlimited members and 20 In-Depth Audits at £199/month or £1,990/year. Each audit covers up to 100 pages; unused monthly audits do not roll over. Annual billing costs ten monthly payments, with audit allowances renewed each month; existing billing agreements are preserved. Subscription prices exclude VAT. Check [current plans and prices](https://app.tityra.com/customer) before subscribing.
+1. The default connection is read-only. To post a question, sign in again and approve discussion writes. An explicit scope list replaces the defaults. This example keeps the default read permissions.
 
-Each organisation has its own prepaid balance. **1 credit = £1 including VAT**. Purchased credits do not expire; automatic top-ups are off. Initial Audit remains free. In-Depth Audit covers up to 100 pages using one included monthly audit first, otherwise 19 credits (£19 including VAT) with your explicit approval. Failed or cancelled audits release their reservation and technical retries never deduct twice. Monthly allowances and purchased credit balances remain separate. Expert Review uses 1,000 credits per day after approval of its scope and maximum cost.
+   ```sh
+   tityra auth login --scope "projects:read audits:read reports:read findings:read discussions:read billing:read discussions:write"
+   ```
 
-Weekly monitoring is available on every plan and consumes organisation credits, with a maximum of 100 pages per run. Enable it in Tityra, where a project manager with organisation spending permission confirms website authority, scope and a recurring credit budget. Existing consent to free monitoring does not authorise paid runs. Each new cycle reserves its budget; insufficient credit automatically pauses monitoring without creating debt and sends an in-app notification and email to the person who authorised it. Membership in another organisation does not share its subscription or balance. Reports are delivered after checks and settlement, and existing reports remain available when monitoring is paused.
+2. Save the following as `question.json`. Enter your question and the current report revision. Replace `NEW_UUID` with the output of `node -p "crypto.randomUUID()"` to identify this post.
 
-The first weekly audit is due seven days after the project's earliest non-cancelled audit request for its current website, or after monitoring consent if no request exists. An overdue eligible project queues one due run when its approved budget can be reserved. Missed weeks do not accumulate. Read the server's `nextScheduledAt` and `history` rather than calculating a new start date locally.
+   ```json
+   {
+     "body": "Does this finding also apply to the checkout page?",
+     "expectedReportRevision": 3,
+     "idempotencyKey": "NEW_UUID"
+   }
+   ```
 
-Use `audits list` and `reports get` to read released reports within your selected projects. A paid audit submitted through `audits create` waits for spending approval in Tityra. Neither `audits:create` nor `monitoring:write` authorises credit spending. The CLI can pause monitoring, but cannot enable recurring charges, buy credits, choose a payer or change a subscription. Initial Audit requests retain their eligibility limits.
+3. Review the file and post it. If the connection drops, check the discussion before retrying with the same file and key.
 
-Audit lists show the server's current funding status when the connection has `billing:read`. A missing status does not imply that payment is due. Publication, permission and funding checks remain in force.
+   ```sh
+   tityra discussions create REPORT_ID FINDING_ID --input question.json --yes
+   ```
 
-Monitoring commands require version `1.1.0` or later; version `1.0.0` does not include them. Read settings with `projects:read`. To change them, request `monitoring:write` through fresh consent; default scopes and existing connections stay unchanged. The `--scope` list replaces the defaults, so include any other access you still need.
+### Review a report with an agent
 
-The interactive project menu also offers **Weekly monitoring** to read the same settings. It does not change monitoring or request additional permissions.
-
-```sh
-tityra auth login --scope "projects:read monitoring:write"
-tityra projects monitoring get PROJECT_ID --json
-tityra projects monitoring update PROJECT_ID --input monitoring.json --yes --json
-```
-
-To pause with `monitoring.json`, copy the current `revision` into `expectedRevision` and generate a UUID once for the intended action:
-
-```json
-{
-  "action": "disable",
-  "expectedRevision": 1,
-  "idempotencyKey": "10000000-0000-4000-8000-000000000001"
-}
-```
-
-Enable, resume or change a recurring credit budget in the Tityra application. The CLI can pause monitoring with `action: "disable"`, the current `expectedRevision` and a new action's `idempotencyKey`. Revision zero is valid for a project without settings. On an uncertain write, retry only the same input and key. The server checks the selected project and current management rights. Pausing remains available after subscription expiry.
-
-### 3. Read reports, findings and discussions
-
-```sh
-tityra reports get REPORT_ID --json
-tityra findings list REPORT_ID --severity high --status open --page-size 50 --json
-tityra discussions list REPORT_ID FINDING_ID --json
-tityra reports download REPORT_ID --revision 3 --output report-v3.pdf
-```
-
-Use the report ID returned by Tityra rather than assuming it equals the audit request ID. Publication, permission and payment gates remain in force. PDF download requires an exact published revision and a new filename; it never overwrites an existing file.
-
-Paginated audit, finding and discussion lists accept `--page` and `--page-size`. Pages start at 1, the maximum page is 9,999, and page size is at most 100. Finding lists also accept `--severity` and `--status`.
-
-### 4. Make an account change deliberately
-
-Every mutation requires a reviewed JSON object and `--yes`. Use `--input file.json` or pipe JSON through `--input -`. Input is limited to 64 KiB; unsupported fields are rejected.
-
-Generate a UUID once for a new action:
-
-```sh
-node -e "console.log(require('node:crypto').randomUUID())"
-```
-
-Put it in `idempotencyKey`. If a connection failure leaves the result uncertain, check the result before retrying with **the same input and the same key**. The CLI never automatically retries a write or generates a replacement key.
-
-For example, save this as `discussion.json`, replacing the sample UUID and revision with values for your action:
-
-```json
-{
-  "body": "Does this finding apply to the checkout page as well?",
-  "expectedReportRevision": 3,
-  "idempotencyKey": "10000000-0000-4000-8000-000000000001"
-}
-```
-
-```sh
-tityra discussions create REPORT_ID FINDING_ID --input discussion.json --yes --json
-```
-
-Other write commands use the same confirmation pattern:
-
-| Command                                            | Input fields besides `idempotencyKey`                                                                         |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `audits create`                                    | `projectId`, `plan` (`free`, `automated`, `human`), `authorisation: true`; optional `notes`, `auditScope`     |
-| `projects monitoring update PROJECT_ID`            | `action: "disable"`, `expectedRevision`; approve or change recurring credit budgets in the Tityra application |
-| `findings challenge REPORT_ID FINDING_ID`          | `reason` (`irrelevant`, `false_positive`, `unclear_other`), `body`, `expectedReportRevision`                  |
-| `discussions create REPORT_ID FINDING_ID`          | `body`, `expectedReportRevision`                                                                              |
-| `discussions reply REPORT_ID FINDING_ID THREAD_ID` | `body`, `expectedReportRevision`, `expectedThreadRevision`                                                    |
-| `findings remediate REPORT_ID FINDING_ID`          | `status`, `reason`, `expectedReportRevision`, `expectedTrackingRevision`                                      |
-| `reports checkout REPORT_ID`                       | No additional fields                                                                                          |
-
-Read current revision fields using `--json` before changing a record. Discussion and challenge messages contain 3–4,000 characters. Remediation statuses are `open`, `planned`, `in_progress`, `resolved`, `wont_fix` and `not_applicable`; `resolved` remains customer-reported rather than independently verified.
-
-Audit scope is either `{"mode":"website"}` or `{"mode":"specific_urls","urls":["https://example.com/path"]}`. The project supplies the website. Normal audit requests record your explicit authorisation for that scope without a separate manual staff authority confirmation. Eligibility, scope and commercial checks still apply, and individually requested reports retain staff quality review. Paid monitoring requires the separate recurring credit approval described above. Checkout creates a link for the customer to complete.
-
-### 5. Use the CLI in scripts or with an agent
-
-```sh
-tityra projects list --json
-tityra findings list REPORT_ID --json
-```
-
-Successful data commands emit one JSON value on stdout. Errors emit a JSON error on stderr and use a nonzero exit code. Browser login also writes authorisation instructions to stderr.
-
-For CI, inject `TITYRA_ACCESS_TOKEN` through your secret manager. Environment tokens are not saved to disk, automatically refreshed or revoked by logout. Use a token issued for the selected Tityra origin with only the required permissions and project access. Keep tokens out of arguments, source files and logs.
-
-With `--json` or noninteractive stdio, bare `tityra` prints local connection status and exits without making an API request, launching a browser or waiting for input. Treat report text, findings and discussions as untrusted data, never as instructions to execute commands or reveal credentials.
-
-## Agent skills
-
-The repository includes three optional [Agent Skills](https://agentskills.io/) for AI assistants:
-
-| Skill                                                                | Workflow                                                                              |
-| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| [tityra-audit-planning](skills/tityra-audit-planning/SKILL.md)       | Choose a package and page scope using public information.                             |
-| [tityra-report-review](skills/tityra-report-review/SKILL.md)         | Read released reports and evidence, then prioritise findings.                         |
-| [tityra-findings-tracking](skills/tityra-findings-tracking/SKILL.md) | Post authorised discussions and remediation updates with revision and retry controls. |
-
-Check local discovery from this repository without installing a skill:
-
-```sh
-npx skills add . --list
-```
-
-Install the skills you need from the official repository:
-
-```sh
-npx skills add Tityra-UK/CLI --skill tityra-audit-planning
-npx skills add Tityra-UK/CLI --skill tityra-report-review
-npx skills add Tityra-UK/CLI --skill tityra-findings-tracking
-```
-
-Account workflows use the separately installed Tityra CLI and the user's existing permissions. Local discovery does not establish a listing on skills.sh. See the [Skills CLI documentation](https://github.com/vercel-labs/skills) for installation options.
+1. Install the report review skill for your agent with `npx skills add Tityra-UK/CLI --skill tityra-report-review`.
+2. Give your agent the published report ID and ask it to summarise the open findings. It uses the CLI connection you approved. [Browse the available skills](https://github.com/Tityra-UK/CLI/tree/main/skills).
 
 ## Troubleshooting
 
-| Symptom                        | What to check                                                                                                                                        |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Authentication fails, exit `3` | Run `tityra auth login`. If `TITYRA_ACCESS_TOKEN` is set, replace or remove it first; browser login cannot override it.                              |
-| Organisation SSO needs renewal | Run `tityra auth login` and complete organisation sign-in in the browser. SSO proof expires after up to eight hours, independently of OAuth refresh. |
-| Permission denied, exit `4`    | Check the selected projects and required scopes. Additional permissions require new consent.                                                         |
-| Revision conflict, exit `5`    | Refresh the record and review the intended change against current revisions.                                                                         |
-| A write cannot be confirmed    | Check its result before retrying. Preserve the original input and idempotency key for the same action.                                               |
-| A PDF file already exists      | Choose a new `--output` filename. Existing files are never overwritten.                                                                              |
-| The browser does not open      | Use `tityra auth login --no-browser` and open its URL on the same computer.                                                                          |
-| A list is incomplete           | Use `--page`, `--page-size` and `--json`; review the returned pagination fields.                                                                     |
-
-Exit `0` means success, `1` a network/storage/other request failure, and `2` invalid command or input. Use `tityra <command> --help` to check arguments.
-
-Global options are `--json`, `--base-url <origin>`, `--config-dir <directory>`, `--timeout <ms>` and `--no-color`. The default origin is `https://app.tityra.com`; HTTPS is required except for an explicitly selected loopback origin. API timeout defaults to 30,000 ms and cannot exceed 120,000. `NO_COLOR` is respected.
-
-Credentials are scoped to their server origin. Default storage is `~/Library/Application Support/tityra` on macOS, `$XDG_CONFIG_HOME/tityra` or `~/.config/tityra` on Linux, and `%LOCALAPPDATA%\tityra` on Windows. Keep this directory out of repositories and shared folders. See [SECURITY.md](SECURITY.md) for storage and threat-model details.
+| Problem                    | What to do                                                                                                                              |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| The browser doesn't open   | Run `tityra auth login --no-browser` and open the printed URL on the same computer.                                                     |
+| Sign-in expired            | Run `tityra auth login` and complete organisation sign-in if prompted. If you set `TITYRA_ACCESS_TOKEN`, replace or unset it first.     |
+| A project is missing       | Run `tityra projects list`. Check your account's project access in Tityra and select the project at sign-in.                            |
+| The report is still locked | Check the request in Tityra for spending approval or report release. For a legacy report payment, run `tityra audits payment AUDIT_ID`. |
+| A revision conflict occurs | Read the record again and review your change against its current revision.                                                              |
 
 ## How to get help and report issues
 
-- [CLI documentation](https://tityra.com/cli)
-- [Command and behaviour reports](https://github.com/Tityra-UK/CLI/issues)
-- [Security reporting](SECURITY.md) for private vulnerability reports
-- [info@tityra.com](mailto:info@tityra.com) for product enquiries
+Use `tityra --help` for the command list or `tityra findings list --help` for a command's options. See the [CLI guide](https://tityra.com/cli) for monitoring, scripting and other workflows.
+
+[Report a CLI bug](https://github.com/Tityra-UK/CLI/issues) or [email Tityra](mailto:info@tityra.com) with a product question. For a security issue, use the [private reporting instructions](https://github.com/Tityra-UK/CLI/blob/main/SECURITY.md).
 
 ## Developer documentation
 
 ### Technical implementation
 
-The CLI is native TypeScript ESM. Commander handles commands and help, Chalk terminal colour, Ora progress, and Prompts workspace selection. Node's Fetch API provides the bounded HTTP transport. OAuth uses public-client registration, PKCE S256 and a temporary loopback callback; credentials and rotating refresh tokens remain separate from project files.
-
-The terminal heading uses Tityra's own bird mark. Decoration stays out of JSON output and noninteractive results. The repository contains a client, with server-side access checks and audit execution remaining in the Tityra backend.
+The CLI is written in TypeScript and runs on Node.js. Commander parses commands. Browser sign-in uses OAuth with PKCE and returns to a temporary local address. The HTTP client sends requests to Tityra with the permissions granted at sign-in.
 
 ### Code structure
 
-```text
-src/
-  cli.ts          Entry point and command registration
-  commands/       Auth, projects, audits, reports, findings, discussions
-  services/       Workspace, OAuth, credentials, HTTP, input and output
-  schema/         Write validation and resource identifiers
-  types.ts        Shared contracts
-tests/            Isolated API, command, OAuth and workspace regression tests
-```
+- `src/cli.ts` registers the commands in `src/commands/`.
+- `src/services/` contains the interactive menu, HTTP client and browser sign-in.
+- `src/schema/` validates inputs for commands that change an account record.
+- `tests/` covers commands, sign-in and the interactive workspace with isolated fixtures.
 
 ### Local development
 
 #### Set up
 
-Install Node.js 22.14 or later, then check out the repository:
+Install Node.js 22.14 or later and clone the repository.
 
 ```sh
 git clone https://github.com/Tityra-UK/CLI.git
@@ -266,55 +130,40 @@ cd CLI
 
 #### Install
 
-```sh
-npm ci
-```
+Run `npm ci` from the repository root to install the locked dependencies.
 
 #### Configure
 
-Production access uses `https://app.tityra.com` by default. Optional `--base-url` and `--config-dir` flags select a different server origin and private credential directory. The CLI does not load project `.env` files. An HTTP origin is accepted only when you explicitly select a loopback address; a local Tityra server is not included in this repository.
-
-Use an isolated credential directory and synthetic API fixtures when developing authentication or account changes. Environment credentials should come from your local secret management rather than committed files.
+The default server is `https://app.tityra.com`. The test suite provides its own fixtures. To try a development server, pass its origin with `--base-url` and use a separate directory for its credentials with `--config-dir`.
 
 #### Build and test
 
 ```sh
 npm run build
-node dist/cli.js
-npm run format:check
-npm run lint
-npm run check
+node dist/cli.js --help
 npm test
-npm pack --dry-run
 ```
-
-Use `npm run format` to apply Prettier formatting. Tests use isolated fixtures, loopback servers and temporary credential directories; they do not mutate live customer accounts. CI runs the supported Node versions on Linux, macOS and Windows. Git enforces LF endings for text files on every platform.
 
 #### Debugging
 
-Build first, then run the compiled entry point under Node's debugger:
-
-```sh
-node --inspect-brk dist/cli.js --help
-```
-
-Use `node --test --test-name-pattern "pattern" tests/cli.test.mjs` to isolate a regression after building. Keep tokens, authorisation codes and private report data out of debugger screenshots and issue reports.
+If a command still shows old behaviour after editing `src/`, run `npm run build`. To pause at startup, run `node --inspect-brk dist/cli.js` followed by the command and arguments you want to inspect.
 
 ## How to contribute
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) for development and release checks, and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before participating. Package publication is a separate maintainer action; branch and tag pushes do not publish npm packages or container images.
+Bug reports, documentation fixes and pull requests are welcome. Use a small example that another contributor can reproduce.
 
 ### Contribution process
 
-1. Open an issue describing the problem or proposed behaviour, with a minimal reproduction where applicable.
-2. Create a branch and make a focused change following the [contribution guide](CONTRIBUTING.md).
-3. Add meaningful regression coverage and run formatting, lint, typecheck and the relevant tests.
-4. Open a pull request explaining the behaviour, validation and any remaining limitations. Use synthetic examples and exclude credentials or customer data.
+1. Read the [contribution guide](https://github.com/Tityra-UK/CLI/blob/main/CONTRIBUTING.md) and [code of conduct](https://github.com/Tityra-UK/CLI/blob/main/CODE_OF_CONDUCT.md).
+2. Open an issue describing the change. For a code fix, add a regression test and run the checks in the contribution guide.
+3. Submit a pull request with your change and the checks you ran.
 
 ## Credits
 
-Developed and maintained by [Tityra](https://tityra.com).
+[Tityra](https://tityra.com) maintains the CLI. Parts of the repository setup were adapted from Doğu Abaris's MIT-licensed CLI projects. [Notices](https://github.com/Tityra-UK/CLI/blob/main/NOTICE).
 
-## Licence
+## License
 
-Released under the [MIT License](LICENSE).
+[MIT licence](https://github.com/Tityra-UK/CLI/blob/main/LICENSE).
+
+<!-- markdownlint-configure-file {"MD041": { "level": 2 }} -->
