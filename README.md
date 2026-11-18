@@ -6,7 +6,7 @@ Tityra's website content audits review content delivery, structure and available
 
 ## Project status
 
-Version `1.1.7` recognises organisation SSO renewal and guides browser sign-in. It includes agent skills for audit planning, report review and authorised finding updates. Credit purchases and spending approval take place in Tityra. Stable releases use npm's `latest` tag; check the [npm package page](https://www.npmjs.com/package/@tityra/cli) for the currently published version. CI targets Node.js 22 and 24 on Linux, macOS and Windows; local regression tests use isolated fixtures rather than live customer accounts.
+Version `1.1.8` reduces memory use when reading reports and findings or downloading a published PDF. The CLI recognises organisation SSO renewal and guides browser sign-in. It includes agent skills for audit planning, report review and authorised finding updates. Credit purchases and spending approval take place in Tityra. Stable releases use npm's `latest` tag; check the [npm package page](https://www.npmjs.com/package/@tityra/cli) for the currently published version. CI targets Node.js 22 and 24 on Linux, macOS and Windows; local regression tests use isolated fixtures rather than live customer accounts.
 
 ## Basic functionality
 

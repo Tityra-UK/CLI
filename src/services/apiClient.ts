@@ -1,8 +1,8 @@
 import { CliError } from './errors.js';
 
-export async function boundedBody(response: Response, maxBytes: number): Promise<Uint8Array> {
+export async function boundedBody(response: Response, maxBytes: number): Promise<Buffer> {
   const reader = response.body?.getReader();
-  if (!reader) return new Uint8Array();
+  if (!reader) return Buffer.alloc(0);
   const chunks: Uint8Array[] = [];
   let size = 0;
   try {
@@ -21,6 +21,10 @@ export async function boundedBody(response: Response, maxBytes: number): Promise
     }
   } finally {
     reader.releaseLock();
+  }
+  const [chunk] = chunks;
+  if (chunk && chunks.length === 1) {
+    return Buffer.from(chunk.buffer, chunk.byteOffset, chunk.byteLength);
   }
   return Buffer.concat(chunks, size);
 }
@@ -77,7 +81,7 @@ export class ApiClient {
           : 'The write could not be confirmed. Check its result before retrying with the SAME input and idempotency key.',
       );
     }
-    let bytes: Uint8Array;
+    let bytes: Buffer;
     try {
       bytes = await boundedBody(response, pdf && response.ok ? 32 * 1024 * 1024 : 8 * 1024 * 1024);
     } catch (error) {
@@ -90,7 +94,7 @@ export class ApiClient {
     if (pdf && response.ok) {
       if (
         !response.headers.get('content-type')?.startsWith('application/pdf') ||
-        !Buffer.from(bytes).subarray(0, 5).equals(Buffer.from('%PDF-'))
+        bytes.toString('latin1', 0, 5) !== '%PDF-'
       ) {
         throw new CliError('invalid_response', 'Tityra did not return a PDF document.');
       }
@@ -104,7 +108,7 @@ export class ApiClient {
       ) {
         let error: unknown;
         try {
-          error = JSON.parse(Buffer.from(bytes).toString('utf8'));
+          error = JSON.parse(bytes.toString('utf8'));
         } catch {
           // Error bodies remain untrusted. Only this exact machine code changes the advice.
         }
@@ -149,7 +153,7 @@ export class ApiClient {
     }
     let data: unknown;
     try {
-      data = JSON.parse(Buffer.from(bytes).toString('utf8'));
+      data = JSON.parse(bytes.toString('utf8'));
     } catch {
       throw new CliError(
         'invalid_response',

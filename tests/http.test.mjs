@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { once } from 'node:events';
 import { test } from 'node:test';
-import { ApiClient } from '../dist/services/apiClient.js';
+import { ApiClient, boundedBody } from '../dist/services/apiClient.js';
 
 const TOKEN = 'fixture-access-token-do-not-print';
 
@@ -21,6 +21,25 @@ function json(response, status, data) {
   response.writeHead(status, { 'Content-Type': 'application/json' });
   response.end(JSON.stringify(data));
 }
+
+test('a single response chunk retains only its byte range and still obeys the body limit', async () => {
+  const slab = Buffer.from('prefix:%PDF-bound:suffix');
+  const chunk = slab.subarray(7, 17);
+  const response = () =>
+    new Response(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(chunk);
+          controller.close();
+        },
+      }),
+    );
+  const bytes = await boundedBody(response(), chunk.length);
+  assert.equal(bytes.buffer, chunk.buffer);
+  assert.equal(bytes.byteOffset, chunk.byteOffset);
+  assert.equal(bytes.toString(), '%PDF-bound');
+  await assert.rejects(boundedBody(response(), chunk.length - 1), { code: 'response_too_large' });
+});
 
 test('account requests carry the bearer header and JSON body without changing the supplied idempotency key', async (t) => {
   const expected = {

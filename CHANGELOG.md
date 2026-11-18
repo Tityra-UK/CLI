@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.8
+
+- Decode report and finding responses directly from the received buffer. PDF downloads now check the first five bytes without copying the document.
+
 ## 1.1.7
 
 - Recognise organisation SSO renewal as an authentication failure and direct users to browser sign-in without exposing private server responses.
