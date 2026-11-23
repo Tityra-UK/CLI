@@ -435,6 +435,10 @@ test('read commands map positional IDs and project filters to the documented acc
       path: '/api/agent/reports/report-fixture/findings',
     },
     {
+      args: ['findings', 'get', 'report-fixture', 'FND:metadata.v2'],
+      path: '/api/agent/reports/report-fixture/findings/FND%3Ametadata.v2',
+    },
+    {
       args: ['discussions', 'list', 'report-fixture', 'FND:metadata.v2'],
       path: '/api/agent/reports/report-fixture/findings/FND%3Ametadata.v2/discussions',
     },
@@ -451,6 +455,44 @@ test('read commands map positional IDs and project filters to the documented acc
     if (item.project) assert.equal(url.searchParams.get('projectId'), item.project);
   }
   assert.equal(context.requests.length, cases.length);
+});
+
+test('finding detail returns the API JSON and preserves access errors without falling back to the list', async (t) => {
+  let status = 200;
+  const body = { finding: { id: 'FND:metadata.v2', title: 'Published title' } };
+  const context = await fixture(t, (_request, response) => {
+    response.writeHead(status, { 'Content-Type': 'application/json' });
+    response.end(JSON.stringify(status === 200 ? body : { error: 'Private response detail' }));
+  });
+  const args = ['findings', 'get', 'report-fixture', 'FND:metadata.v2'];
+  const result = await run(context, args);
+  assert.equal(result.code, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), body);
+  for (const [httpStatus, exitCode] of [
+    [402, 1],
+    [403, 4],
+    [404, 1],
+  ]) {
+    status = httpStatus;
+    const rejected = await run(context, args);
+    safeError(rejected, exitCode);
+    assert.doesNotMatch(rejected.stderr, /Private response detail/);
+  }
+  assert.equal(context.requests.length, 4);
+  for (const request of context.requests) {
+    assert.equal(request.method, 'GET');
+    assert.equal(request.url, '/api/agent/reports/report-fixture/findings/FND%3Ametadata.v2');
+    assert.equal(request.headers.authorization, `Bearer ${TOKEN}`);
+    assert.equal(request.body, undefined);
+  }
+  for (const [report, finding] of [
+    ['bad/report', 'FND:ok'],
+    ['report-fixture', '../x'],
+    ['report-fixture', '.'],
+  ]) {
+    safeError(await run(context, ['findings', 'get', report, finding]));
+  }
+  assert.equal(context.requests.length, 4);
 });
 
 test('monitoring enablement fails with application guidance before any HTTP request', async (t) => {

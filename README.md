@@ -53,7 +53,13 @@ You need a terminal, Node.js 22.14 or later with npm, and a Tityra customer acco
    tityra findings list REPORT_ID --severity high --status open --json
    ```
 
-2. Copy a finding ID from the results to read its discussion.
+2. Copy a finding ID from the results to read that finding in one request. If you already have both IDs, you can start here.
+
+   ```sh
+   tityra findings get REPORT_ID FINDING_ID --json
+   ```
+
+3. Read the finding's discussion using the same IDs.
 
    ```sh
    tityra discussions list REPORT_ID FINDING_ID --json

@@ -47,6 +47,17 @@ export function registerFindingsCommands(program: Command, context: ContextFacto
       'Loading findings',
     );
   });
+  findings
+    .command('get <report-id> <finding-id>')
+    .description('Read one finding in a published report')
+    .action(async (reportId: string, findingId: string, _options: unknown, command: Command) => {
+      await read(
+        command,
+        context,
+        `/api/agent/reports/${identifier(reportId)}/findings/${identifier(findingId, true)}`,
+        'Loading finding',
+      );
+    });
   writeOptions(
     findings
       .command('challenge <report-id> <finding-id>')

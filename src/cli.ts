@@ -42,6 +42,7 @@ Get started:
   tityra
   tityra projects list
   tityra findings list <report-id> --json
+  tityra findings get <report-id> <finding-id> --json
 
 Account changes require --input <file.json> and --yes.
 Run tityra <command> --help for its available actions.

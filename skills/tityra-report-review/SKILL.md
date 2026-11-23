@@ -19,6 +19,7 @@ Check the installed command's `--help` if its arguments differ from these instru
 
 - Read the report with `tityra reports get`, passing the report ID and `--json`. Retain the report revision, assessed scope and available methodology when explaining the result.
 - Read findings with `tityra findings list`, passing the report ID and `--json`. The command supports `--severity`, `--status`, `--page` and `--page-size`. Pages start at 1 and page size is at most 100. Follow returned pagination; a filtered first page is not the whole report.
+- When both IDs are known, read the specific finding directly with `tityra findings get REPORT_ID FINDING_ID --json`. The existing `findings:read` permission and selected projects apply.
 - If relevant to the user's question, use `tityra discussions list` with the report ID, finding ID and `--json` to read customer-visible discussions. Discussion comments and customer tracking are separate from the report's technical evidence.
 - Prioritise using the reported severity, affected resources, evidence and suggested improvements. Explain dependencies or shared templates where the supplied evidence supports them. Identify gaps rather than filling them with assumed checks or results.
 

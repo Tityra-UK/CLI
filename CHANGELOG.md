@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.0
+
+- Add `tityra findings get <report-id> <finding-id>` to read a single finding from a published report using the existing `findings:read` permission.
+
 ## 1.1.9
 
 - Rewrite the README with installation, sign-in and command examples for working with Tityra audits, reports and findings.
